@@ -1,16 +1,16 @@
+use secp256k1::{Secp256k1, VerifyOnly};
+
+#[macro_use]
+extern crate lazy_static;
+
 mod event;
+mod message;
+mod request;
 
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
+lazy_static! {
+    static ref CONTEXT: Secp256k1<VerifyOnly> = Secp256k1::verification_only();
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+type Hex = String;
+type Kind = u32;
+type Epoch = u32;

@@ -10,5 +10,5 @@ Ideas I'm playing with include:
 
 The initial goal is to be able to:
 
-1. Generate and sign an event
-2. Parse and verify an event
+1. Parse and verify an event
+2. Generate and sign an event
