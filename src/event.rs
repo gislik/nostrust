@@ -1,10 +1,12 @@
-use crate::{Epoch, Hex, Kind, CONTEXT};
+use crate::{Epoch, Hex, Kind};
+
 use secp256k1::hashes::{self, hex, sha256::Hash};
 use secp256k1::schnorr::Signature;
-use secp256k1::{Message, XOnlyPublicKey};
+use secp256k1::{Message, XOnlyPublicKey, SECP256K1};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::str::FromStr;
+use std::time::UNIX_EPOCH;
 
 /// Event is at the heart of nostr
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
@@ -19,6 +21,34 @@ pub struct Event {
 }
 
 impl Event {
+    /// new constructs an event, calculates the id, signs the payload,
+    /// and populates the public key deriving it from the secret key.
+    fn new(
+        kind: Kind,
+        tags: Vec<String>,
+        content: String,
+        secretkey: &secp256k1::SecretKey,
+    ) -> Self {
+        let pair = secp256k1::KeyPair::from_secret_key(SECP256K1, secretkey);
+        let (pubkey, _) = pair.x_only_public_key();
+        let created_at = UNIX_EPOCH.elapsed().unwrap().as_secs() as u32; // ok to unwrap as
+                                                                         // UNIX_EPOCH happened a long time ago
+        let mut event = Self {
+            id: "".to_string(),
+            pubkey: pubkey.to_string(),
+            created_at,
+            kind,
+            tags,
+            content,
+            sig: "".to_string(),
+        };
+        let id = Message::from_slice(event.hash().as_ref()).unwrap();
+        let sig = pair.sign_schnorr(id);
+        event.id = id.to_string();
+        event.sig = sig.to_string();
+        event
+    }
+
     /// hashes the event fields.
     fn hash(&self) -> Hash {
         let json = &json!([
@@ -42,7 +72,7 @@ impl Event {
         let signature = &Signature::from_str(&self.sig).map_err(Error::Verification)?;
         let message = &Message::from_slice(digest.as_ref()).map_err(Error::Verification)?;
         let pubkey = &XOnlyPublicKey::from_str(&self.pubkey).map_err(Error::Verification)?;
-        CONTEXT
+        SECP256K1
             .verify_schnorr(signature, message, pubkey)
             .map_err(Error::Verification)
     }
@@ -116,6 +146,15 @@ mod tests {
     #[test]
     fn verification_works() -> Result<(), Error> {
         get_event().verify()?;
+        Ok(())
+    }
+
+    #[test]
+    fn new_is_idempotent() -> Result<(), Error> {
+        let (sk, _) = secp256k1::generate_keypair(&mut secp256k1::rand::thread_rng());
+        let event = Event::new(0, vec![], "content".to_string(), &sk);
+        println!("{:?}", event);
+        event.verify()?;
         Ok(())
     }
 }
