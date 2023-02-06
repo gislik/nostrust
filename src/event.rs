@@ -1,6 +1,5 @@
 use crate::time::{self, Seconds};
-use crate::{Hex, Kind, Tag};
-
+use crate::{cli, Hex, Kind, Tag};
 use secp256k1::hashes::{self, hex, sha256::Hash};
 use secp256k1::schnorr::Signature;
 use secp256k1::{Message, XOnlyPublicKey, SECP256K1};
@@ -99,9 +98,9 @@ impl From<hex::Error> for Error {
 impl From<Error> for io::Error {
     fn from(err: Error) -> Self {
         match err {
-            Error::HashMismatch => io::Error::new(io::ErrorKind::Other, "hash mismatch"),
-            Error::Verification(_err) => io::Error::new(io::ErrorKind::Other, "verification error"),
-            Error::Hex(_err) => io::Error::new(io::ErrorKind::Other, "hex error"),
+            Error::HashMismatch => cli::io_error("hash mismatch"),
+            Error::Verification(_err) => cli::io_error("verification error"),
+            Error::Hex(_err) => cli::io_error("hex error"),
         }
     }
 }

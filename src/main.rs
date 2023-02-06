@@ -6,30 +6,30 @@ use std::io::{stdin, Result};
 #[command(author, version, about, long_about)]
 pub struct Args {
     #[command(subcommand)]
-    command: Option<Command>,
+    command: Command,
 }
 
 #[derive(Subcommand)]
 enum Command {
+    /// Verify and generate events
     Event {
         #[command(subcommand)]
-        subcommand: Option<EventCommand>,
+        subcommand: EventCommand,
     },
 }
 
 #[derive(Subcommand)]
 pub enum EventCommand {
+    /// Verifies an event on stdin
     Verify,
 }
 
 fn main() -> Result<()> {
     let args = Args::parse();
     match args.command {
-        Some(Command::Event { subcommand }) => match subcommand {
-            Some(EventCommand::Verify) => verify_event(stdin()),
-            None => Ok(()),
+        Command::Event { subcommand } => match subcommand {
+            EventCommand::Verify => verify_event(stdin()),
         },
-        None => Ok(()),
     }
 }
 
