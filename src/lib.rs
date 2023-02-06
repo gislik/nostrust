@@ -1,3 +1,4 @@
+pub mod cli;
 pub mod event;
 pub mod message;
 pub mod request;
