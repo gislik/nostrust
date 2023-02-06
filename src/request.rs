@@ -18,11 +18,11 @@ pub struct Request {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::*;
     use serde_json::{from_str, to_string};
 
-    fn get_simple_request() -> Request {
+    pub fn get_simple_request() -> Request {
         Request {
             ids: vec!["id".to_string()],
             authors: vec!["author".to_string()],
@@ -35,7 +35,7 @@ mod tests {
         }
     }
 
-    fn get_json() -> &'static str {
+    pub fn get_json() -> &'static str {
         r##"{"ids":["id"],"authors":["author"],"kinds":[1,2],"#e":["e","event"],"#p":["p","profile"],"since":1,"until":2,"limit":3}"##
     }
 

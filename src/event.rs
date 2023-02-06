@@ -85,11 +85,11 @@ pub enum Error {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::*;
     use serde_json::{from_str, to_string};
 
-    fn get_simple_event() -> Event {
+    pub fn get_simple_event() -> Event {
         Event {
             id: "id".into(),
             pubkey: "pubkey".into(),
@@ -105,7 +105,7 @@ mod tests {
         }
     }
 
-    fn get_json() -> &'static str {
+    pub fn get_json() -> &'static str {
         r#"{"id":"id","pubkey":"pubkey","created_at":0,"kind":1,"tags":[["p","profile","relays"]],"content":"content","sig":"sig"}"#
     }
 
