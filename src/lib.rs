@@ -4,6 +4,6 @@ pub mod message;
 pub mod request;
 pub mod time;
 
-type Hex = String;
-type Kind = u32;
-type Tag = Vec<String>;
+pub type Hex = String;
+pub type Kind = u32;
+pub type Tag = Vec<String>;

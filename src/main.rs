@@ -1,5 +1,6 @@
 use clap::{Parser, Subcommand};
 use nostrust::cli::*;
+use nostrust::Kind;
 use std::io::{stdin, Result};
 
 #[derive(Parser)]
@@ -22,6 +23,12 @@ enum Command {
 pub enum EventCommand {
     /// Verifies an event on stdin
     Verify,
+    /// Generate a new event on stdout
+    Generate {
+        #[arg(short, long)]
+        kind: Kind,
+        content: String,
+    },
 }
 
 fn main() -> Result<()> {
@@ -29,6 +36,7 @@ fn main() -> Result<()> {
     match args.command {
         Command::Event { subcommand } => match subcommand {
             EventCommand::Verify => verify_event(stdin()),
+            EventCommand::Generate { kind, content } => generate_event(kind, content),
         },
     }
 }
