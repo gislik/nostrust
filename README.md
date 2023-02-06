@@ -10,5 +10,7 @@ Ideas I'm playing with include:
 
 The initial goal is to be able to:
 
-1. Parse and verify an event
-2. Generate and sign an event
+- [x] Parse and verify an event
+- [x] Generate and sign an event
+- [ ] Construct messages
+
