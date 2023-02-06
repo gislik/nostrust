@@ -1,5 +1,5 @@
 use crate::time::{self, Seconds};
-use crate::{Hex, Kind};
+use crate::{Hex, Kind, Tag};
 
 use secp256k1::hashes::{self, hex, sha256::Hash};
 use secp256k1::schnorr::Signature;
@@ -15,7 +15,7 @@ pub struct Event {
     pubkey: Hex,
     created_at: Seconds,
     kind: Kind,
-    tags: Vec<String>,
+    tags: Vec<Tag>,
     content: String,
     sig: Hex,
 }
@@ -25,7 +25,7 @@ impl Event {
     /// and populates the public key deriving it from the secret key.
     pub fn new(
         kind: Kind,
-        tags: Vec<String>,
+        tags: Vec<Tag>,
         content: String,
         secretkey: &secp256k1::SecretKey,
     ) -> Self {
@@ -95,14 +95,18 @@ mod tests {
             pubkey: "pubkey".into(),
             created_at: 0,
             kind: 1,
-            tags: vec![],
+            tags: vec![vec![
+                "p".to_string(),
+                "profile".to_string(),
+                "relays".to_string(),
+            ]],
             content: "content".into(),
             sig: "sig".into(),
         }
     }
 
     fn get_json() -> &'static str {
-        r#"{"id":"id","pubkey":"pubkey","created_at":0,"kind":1,"tags":[],"content":"content","sig":"sig"}"#
+        r#"{"id":"id","pubkey":"pubkey","created_at":0,"kind":1,"tags":[["p","profile","relays"]],"content":"content","sig":"sig"}"#
     }
 
     #[test]

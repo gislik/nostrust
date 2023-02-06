@@ -5,3 +5,4 @@ pub mod time;
 
 type Hex = String;
 type Kind = u32;
+type Tag = Vec<String>;
