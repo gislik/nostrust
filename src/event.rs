@@ -6,6 +6,7 @@ use secp256k1::schnorr::Signature;
 use secp256k1::{Message, XOnlyPublicKey, SECP256K1};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use std::io;
 use std::str::FromStr;
 
 /// Event is at the heart of nostr
@@ -53,13 +54,12 @@ impl Event {
         if self.hash().to_string() != self.id {
             return Err(Error::HashMismatch);
         }
-        let digest = Hash::from_str(&self.id).map_err(Error::Hex)?;
-        let signature = &Signature::from_str(&self.sig).map_err(Error::Verification)?;
-        let message = &Message::from_slice(digest.as_ref()).map_err(Error::Verification)?;
-        let pubkey = &XOnlyPublicKey::from_str(&self.pubkey).map_err(Error::Verification)?;
-        SECP256K1
-            .verify_schnorr(signature, message, pubkey)
-            .map_err(Error::Verification)
+        let digest = Hash::from_str(&self.id)?;
+        let signature = &Signature::from_str(&self.sig)?;
+        let message = &Message::from_slice(digest.as_ref())?;
+        let pubkey = &XOnlyPublicKey::from_str(&self.pubkey)?;
+        SECP256K1.verify_schnorr(signature, message, pubkey)?;
+        Ok(())
     }
 
     /// hashes the event fields.
@@ -82,6 +82,28 @@ pub enum Error {
     HashMismatch,
     Verification(secp256k1::Error),
     Hex(hex::Error),
+}
+
+impl From<secp256k1::Error> for Error {
+    fn from(err: secp256k1::Error) -> Self {
+        Error::Verification(err)
+    }
+}
+
+impl From<hex::Error> for Error {
+    fn from(err: hex::Error) -> Self {
+        Error::Hex(err)
+    }
+}
+
+impl From<Error> for io::Error {
+    fn from(err: Error) -> Self {
+        match err {
+            Error::HashMismatch => io::Error::new(io::ErrorKind::Other, "hash mismatch"),
+            Error::Verification(_err) => io::Error::new(io::ErrorKind::Other, "verification error"),
+            Error::Hex(_err) => io::Error::new(io::ErrorKind::Other, "hex error"),
+        }
+    }
 }
 
 #[cfg(test)]
