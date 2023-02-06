@@ -1,4 +1,5 @@
-use crate::{Epoch, Hex, Kind};
+use crate::time::{self, Seconds};
+use crate::{Hex, Kind};
 
 use secp256k1::hashes::{self, hex, sha256::Hash};
 use secp256k1::schnorr::Signature;
@@ -6,14 +7,13 @@ use secp256k1::{Message, XOnlyPublicKey, SECP256K1};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::str::FromStr;
-use std::time::UNIX_EPOCH;
 
 /// Event is at the heart of nostr
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Event {
     id: Hex,
     pubkey: Hex,
-    created_at: Epoch,
+    created_at: Seconds,
     kind: Kind,
     tags: Vec<String>,
     content: String,
@@ -31,8 +31,7 @@ impl Event {
     ) -> Self {
         let pair = secp256k1::KeyPair::from_secret_key(SECP256K1, secretkey);
         let (pubkey, _) = pair.x_only_public_key();
-        let created_at = UNIX_EPOCH.elapsed().unwrap().as_secs() as u32; // ok to unwrap as
-                                                                         // UNIX_EPOCH happened a long time ago
+        let created_at = time::since_epoch();
         let mut event = Self {
             id: "".to_string(),
             pubkey: pubkey.to_string(),
@@ -42,7 +41,7 @@ impl Event {
             content,
             sig: "".to_string(),
         };
-        let id = Message::from_slice(event.hash().as_ref()).unwrap();
+        let id = Message::from_slice(event.hash().as_ref()).expect("message must be 32 bytes");
         let sig = pair.sign_schnorr(id);
         event.id = id.to_string();
         event.sig = sig.to_string();

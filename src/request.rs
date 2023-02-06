@@ -1,4 +1,5 @@
-use crate::{Epoch, Hex, Kind};
+use crate::time::Seconds;
+use crate::{Hex, Kind};
 use serde::{Deserialize, Serialize};
 
 /// Request is a notes filter
@@ -9,7 +10,7 @@ pub struct Request {
     kinds: Vec<Kind>,
     e: Vec<Hex>,
     p: Vec<Hex>,
-    since: Vec<Epoch>,
-    until: Vec<Epoch>,
+    since: Vec<Seconds>,
+    until: Vec<Seconds>,
     limit: Vec<u16>,
 }
