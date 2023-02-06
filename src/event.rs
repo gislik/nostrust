@@ -23,7 +23,7 @@ pub struct Event {
 impl Event {
     /// new constructs an event, calculates the id, signs the payload,
     /// and populates the public key deriving it from the secret key.
-    fn new(
+    pub fn new(
         kind: Kind,
         tags: Vec<String>,
         content: String,
@@ -49,6 +49,20 @@ impl Event {
         event
     }
 
+    /// verifies signature matches the id and the pubkey.
+    pub fn verify(&self) -> Result<(), Error> {
+        if self.hash().to_string() != self.id {
+            return Err(Error::HashMismatch);
+        }
+        let digest = Hash::from_str(&self.id).map_err(Error::Hex)?;
+        let signature = &Signature::from_str(&self.sig).map_err(Error::Verification)?;
+        let message = &Message::from_slice(digest.as_ref()).map_err(Error::Verification)?;
+        let pubkey = &XOnlyPublicKey::from_str(&self.pubkey).map_err(Error::Verification)?;
+        SECP256K1
+            .verify_schnorr(signature, message, pubkey)
+            .map_err(Error::Verification)
+    }
+
     /// hashes the event fields.
     fn hash(&self) -> Hash {
         let json = &json!([
@@ -62,24 +76,10 @@ impl Event {
         let data = serde_json::to_string(json).expect("unable to serialize json");
         hashes::Hash::hash(data.as_ref())
     }
-
-    /// verifies signature matches the id and the pubkey.
-    fn verify(&self) -> Result<(), Error> {
-        if self.hash().to_string() != self.id {
-            return Err(Error::HashMismatch);
-        }
-        let digest = Hash::from_str(&self.id).map_err(Error::Hex)?;
-        let signature = &Signature::from_str(&self.sig).map_err(Error::Verification)?;
-        let message = &Message::from_slice(digest.as_ref()).map_err(Error::Verification)?;
-        let pubkey = &XOnlyPublicKey::from_str(&self.pubkey).map_err(Error::Verification)?;
-        SECP256K1
-            .verify_schnorr(signature, message, pubkey)
-            .map_err(Error::Verification)
-    }
 }
 
 #[derive(Debug)]
-enum Error {
+pub enum Error {
     HashMismatch,
     Verification(secp256k1::Error),
     Hex(hex::Error),
@@ -150,7 +150,7 @@ mod tests {
     }
 
     #[test]
-    fn new_is_idempotent() -> Result<(), Error> {
+    pub fn new_is_idempotent() -> Result<(), Error> {
         let (sk, _) = secp256k1::generate_keypair(&mut secp256k1::rand::thread_rng());
         let event = Event::new(0, vec![], "content".to_string(), &sk);
         println!("{:?}", event);

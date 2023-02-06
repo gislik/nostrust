@@ -1,6 +1,6 @@
-mod event;
-mod message;
-mod request;
+pub mod event;
+pub mod message;
+pub mod request;
 
 type Hex = String;
 type Kind = u32;
