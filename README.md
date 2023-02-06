@@ -17,8 +17,8 @@ The initial goal is to be able to:
 Now that the initial goal has been accomplished, the next task is to create a 
 command line utility which leverages the parts that have been implemented:
 
-- [ ] Read an event as JSON from STDIN and verify
-- [ ] Generate an event from CLI arguments and write to STDOUT as JSON.
+- [x] Read an event as JSON from STDIN and verify
+- [x] Generate an event from CLI arguments and write to STDOUT as JSON.
 
 
 
