@@ -7,7 +7,7 @@ use std::str::FromStr;
 use thiserror::Error;
 
 /// Keypair for the secp256k1 elliptic curve. Defined in
-/// [NIPS-01](https://github.com/nostr-protocol/nips/blob/master/01.md).
+/// [NIP-01](https://github.com/nostr-protocol/nips/blob/master/01.md).
 pub struct Pair {
     /// The secret key of the key pair. If the secret key doesn't exists
     /// the pair cannot be used to sign messages.
@@ -95,14 +95,14 @@ pub struct SecretKey(ec::SecretKey);
 
 impl SecretKey {
     /// Tries to parse a secret key from its bech32 encoding. Defined in
-    /// [NIPS-19](https://github.com/nostr-protocol/nips/blob/master/19.md)
+    /// [NIP-19](https://github.com/nostr-protocol/nips/blob/master/19.md)
     pub fn from_nsec(nsec: &str) -> Result<Self> {
         let raw = n::decode("nsec", nsec)?;
         Self::try_from(raw.as_slice())
     }
 
     /// Returns the bech32 encoded secret key. Defined in
-    /// [NIPS-19](https://github.com/nostr-protocol/nips/blob/master/19.md)
+    /// [NIP-19](https://github.com/nostr-protocol/nips/blob/master/19.md)
     pub fn display_secret_as_nsec(&self) -> String {
         n::encode("nsec", self.0.secret_bytes().into()).unwrap() // never results in an error
     }
@@ -136,14 +136,14 @@ pub struct PublicKey(ec::XOnlyPublicKey);
 
 impl PublicKey {
     /// Tries to parse a public key from its bech32 encoding. Defined in
-    /// [NIPS-19](https://github.com/nostr-protocol/nips/blob/master/19.md)
+    /// [NIP-19](https://github.com/nostr-protocol/nips/blob/master/19.md)
     pub fn from_npub(npub: &str) -> Result<Self> {
         let data = n::decode("npub", &npub)?;
         Self::try_from(data.as_slice())
     }
 
     /// Encodes the public key to its bech32 encoding. Defined in
-    /// [NIPS-19](https://github.com/nostr-protocol/nips/blob/master/19.md)
+    /// [NIP-19](https://github.com/nostr-protocol/nips/blob/master/19.md)
     pub fn to_npub(&self) -> String {
         n::encode("npub", self.0.serialize().into()).unwrap() // never results in an error
     }

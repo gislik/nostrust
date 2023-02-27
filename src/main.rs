@@ -1,6 +1,6 @@
 use clap::{Parser, Subcommand};
 use nostrust::cli::*;
-use nostrust::Kind;
+use nostrust::event::Kind;
 use std::io::{stdin, Result};
 
 #[derive(Parser)]

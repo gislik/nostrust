@@ -1,12 +1,16 @@
 use crate::key::{self, Pair, PublicKey};
 use crate::signature::Signature;
 use crate::time::{self, Seconds};
-use crate::{cli, signature, Hex, Kind, Tag};
+use crate::{cli, signature, Hex, Tag};
 use secp256k1::hashes::{self, hex, hex::FromHex, sha256::Hash};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::io;
 use std::str::FromStr;
+
+const METADATA: Kind = 0;
+const TEXT: Kind = 1;
+const RECOMMEND_RELAY: Kind = 2;
 
 /// Event is at the heart of nostr. Defined in
 /// [NIP-01](https://github.com/nostr-protocol/nips/blob/master/01.md).
@@ -24,6 +28,7 @@ pub struct Event {
 impl Event {
     /// new constructs an event, calculates the id, signs the payload,
     /// and populates the public key deriving it from the secret key.
+    /// Defined in [NIP-01](https://github.com/nostr-protocol/nips/blob/master/01.md).
     pub fn new(kind: Kind, tags: Vec<Tag>, content: &str, pair: &Pair) -> Self {
         let pubkey = pair.public_key();
         let created_at = time::since_epoch();
@@ -41,6 +46,34 @@ impl Event {
         event.id = id.to_string();
         event.sig = sig.to_string();
         event
+    }
+
+    /// Constructs a new event which sets the metadata of the public key.
+    /// Defined in [NIP-01](https://github.com/nostr-protocol/nips/blob/master/01.md).
+    pub fn set_metadata(name: &str, about: &str, picture: &str, pair: &Pair) -> Self {
+        let content = json!({
+            "name": name,
+            "about": about,
+            "picture": picture,
+        });
+        Event::new(METADATA, vec![], &content.to_string(), pair)
+    }
+
+    /// Constructs a new text note.
+    /// Defined in [NIP-01](https://github.com/nostr-protocol/nips/blob/master/01.md).
+    pub fn text_note(content: &str, pair: &Pair) -> Self {
+        Event::new(TEXT, vec![], content, pair)
+    }
+
+    /// Constructs a recommend relay note.
+    /// Defined in [NIP-01](https://github.com/nostr-protocol/nips/blob/master/01.md).
+    pub fn recommend_relay(relay: &str, pair: &Pair) -> Self {
+        Event::new(RECOMMEND_RELAY, vec![], relay, pair)
+    }
+
+    pub fn set_tags(&mut self, tags: &Vec<Tag>) -> &mut Self {
+        self.tags = tags.to_owned();
+        self
     }
 
     /// verifies signature matches the id and the pubkey.
@@ -69,6 +102,8 @@ impl Event {
         hashes::Hash::hash(data.as_ref())
     }
 }
+
+pub type Kind = u32;
 
 type Result<T> = std::result::Result<T, Error>;
 

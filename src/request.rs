@@ -1,5 +1,5 @@
-use crate::time::Seconds;
-use crate::{Hex, Kind};
+use crate::Hex;
+use crate::{event::Kind, time::Seconds};
 use serde::{Deserialize, Serialize};
 
 /// Request is a notes filter. Defined in

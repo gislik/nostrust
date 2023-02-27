@@ -11,7 +11,6 @@ use crate::bech32 as n;
 use thiserror::Error;
 
 pub type Hex = String;
-pub type Kind = u32;
 pub type Tag = Vec<String>;
 
 #[derive(Debug, Error)]

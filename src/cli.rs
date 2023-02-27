@@ -1,4 +1,5 @@
-use crate::{event::Event, key::Pair, Kind};
+use crate::event::{Event, Kind};
+use crate::key::Pair;
 use std::io::{Error, ErrorKind, Read, Result};
 
 pub fn io_error(message: &str) -> Error {
