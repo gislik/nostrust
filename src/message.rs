@@ -1,10 +1,10 @@
+use crate::event::Event;
+use crate::request::Request;
 use serde::ser::SerializeSeq;
 use serde::Serialize;
 
-use crate::event::Event;
-use crate::request::Request;
-
-// Messages are sent from clients to relays
+/// Messages are sent from clients to relays. Defined in
+/// [NIP-01](https://github.com/nostr-protocol/nips/blob/master/01.md).
 pub enum Message {
     Event(Event),
     Request(String, Request),

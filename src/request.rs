@@ -2,7 +2,8 @@ use crate::time::Seconds;
 use crate::{Hex, Kind};
 use serde::{Deserialize, Serialize};
 
-/// Request is a notes filter
+/// Request is a notes filter. Defined in
+/// [NIP-01](https://github.com/nostr-protocol/nips/blob/master/01.md).
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct Request {
     ids: Vec<Hex>,

@@ -1,14 +1,15 @@
+use crate::key::{self, Pair, PublicKey};
+use crate::signature::Signature;
 use crate::time::{self, Seconds};
-use crate::{cli, Hex, Kind, Tag};
-use secp256k1::hashes::{self, hex, sha256::Hash};
-use secp256k1::schnorr::Signature;
-use secp256k1::{Message, XOnlyPublicKey, SECP256K1};
+use crate::{cli, signature, Hex, Kind, Tag};
+use secp256k1::hashes::{self, hex, hex::FromHex, sha256::Hash};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::io;
 use std::str::FromStr;
 
-/// Event is at the heart of nostr
+/// Event is at the heart of nostr. Defined in
+/// [NIP-01](https://github.com/nostr-protocol/nips/blob/master/01.md).
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Event {
     id: Hex,
@@ -23,14 +24,8 @@ pub struct Event {
 impl Event {
     /// new constructs an event, calculates the id, signs the payload,
     /// and populates the public key deriving it from the secret key.
-    pub fn new(
-        kind: Kind,
-        tags: Vec<Tag>,
-        content: String,
-        secretkey: &secp256k1::SecretKey,
-    ) -> Self {
-        let pair = secp256k1::KeyPair::from_secret_key(SECP256K1, secretkey);
-        let (pubkey, _) = pair.x_only_public_key();
+    pub fn new(kind: Kind, tags: Vec<Tag>, content: &str, pair: &Pair) -> Self {
+        let pubkey = pair.public_key();
         let created_at = time::since_epoch();
         let mut event = Self {
             id: "".to_string(),
@@ -38,26 +33,25 @@ impl Event {
             created_at,
             kind,
             tags,
-            content,
+            content: content.to_string(),
             sig: "".to_string(),
         };
-        let id = Message::from_slice(event.hash().as_ref()).expect("message must be 32 bytes");
-        let sig = pair.sign_schnorr(id);
+        let id = event.hash();
+        let sig = pair.sign(id).unwrap(); // hash is always valid
         event.id = id.to_string();
         event.sig = sig.to_string();
         event
     }
 
     /// verifies signature matches the id and the pubkey.
-    pub fn verify(&self) -> Result<(), Error> {
+    pub fn verify(&self) -> Result<()> {
         if self.hash().to_string() != self.id {
             return Err(Error::HashMismatch);
         }
-        let digest = Hash::from_str(&self.id)?;
-        let signature = &Signature::from_str(&self.sig)?;
-        let message = &Message::from_slice(digest.as_ref())?;
-        let pubkey = &XOnlyPublicKey::from_str(&self.pubkey)?;
-        SECP256K1.verify_schnorr(signature, message, pubkey)?;
+        let sig = Signature::from_str(&self.sig)?;
+        let data = Vec::<u8>::from_hex(&self.id)?;
+        let pk = PublicKey::from_str(&self.pubkey)?;
+        Pair::from(&pk).verify(&sig, &data, &pk)?;
         Ok(())
     }
 
@@ -76,16 +70,25 @@ impl Event {
     }
 }
 
+type Result<T> = std::result::Result<T, Error>;
+
 #[derive(Debug)]
 pub enum Error {
     HashMismatch,
-    Verification(secp256k1::Error),
+    Signature(signature::Error),
+    Verification(key::Error),
     Hex(hex::Error),
 }
 
-impl From<secp256k1::Error> for Error {
-    fn from(err: secp256k1::Error) -> Self {
+impl From<key::Error> for Error {
+    fn from(err: key::Error) -> Self {
         Error::Verification(err)
+    }
+}
+
+impl From<signature::Error> for Error {
+    fn from(err: signature::Error) -> Self {
+        Error::Signature(err)
     }
 }
 
@@ -100,6 +103,7 @@ impl From<Error> for io::Error {
         match err {
             Error::HashMismatch => cli::io_error("hash mismatch"),
             Error::Verification(_err) => cli::io_error("verification error"),
+            Error::Signature(_err) => cli::io_error("signature error"),
             Error::Hex(_err) => cli::io_error("hex error"),
         }
     }
@@ -168,15 +172,15 @@ pub mod tests {
     }
 
     #[test]
-    fn verification_works() -> Result<(), Error> {
+    fn verification_works() -> Result<()> {
         get_event().verify()?;
         Ok(())
     }
 
     #[test]
-    pub fn new_is_idempotent() -> Result<(), Error> {
-        let (sk, _) = secp256k1::generate_keypair(&mut secp256k1::rand::thread_rng());
-        let event = Event::new(0, vec![], "content".to_string(), &sk);
+    pub fn new_is_idempotent() -> Result<()> {
+        let pair = Pair::generate();
+        let event = Event::new(0, vec![], "content", &pair);
         println!("{:?}", event);
         event.verify()?;
         Ok(())

@@ -6,8 +6,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+bech32 = "0.9.1"
 clap = { version = "4.1.4", features = ["derive"] }
 secp256k1 = {version = "0.26.0", features = ["std", "rand-std", "global-context", "bitcoin-hashes-std", "serde"]}
 serde = { version = "1.0.152", features = ["derive"] }
 serde-big-array = "0.4.1"
 serde_json = "1.0"
+thiserror = "1.0.38"

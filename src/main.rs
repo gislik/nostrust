@@ -36,8 +36,7 @@ fn main() -> Result<()> {
     match args.command {
         Command::Event { subcommand } => match subcommand {
             EventCommand::Verify => verify_event(stdin()),
-            EventCommand::Generate { kind, content } => generate_event(kind, content),
+            EventCommand::Generate { kind, ref content } => generate_event(kind, content),
         },
     }
 }
-
