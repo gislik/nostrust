@@ -54,7 +54,7 @@ impl Event {
             data.append(&mut vec![RELAY_TYPE, bs.len() as u8]);
             data.append(&mut bs);
         }
-        n::encode("nevent", data).expect("encoding nevent")
+        n::encode(EVENT_PREFIX, data).expect("encoding nevent")
     }
 }
 
