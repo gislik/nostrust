@@ -1,7 +1,7 @@
 use clap::{Parser, Subcommand};
-use nostrust::cli::*;
 use nostrust::event::Kind;
-use std::io::{stdin, Result};
+use nostrust::{cli::*, Hex};
+use std::io::{stdin, stdout, Result};
 
 #[derive(Parser)]
 #[command(author, version, about, long_about)]
@@ -16,6 +16,18 @@ enum Command {
     Event {
         #[command(subcommand)]
         subcommand: EventCommand,
+    },
+    /// Generate requests
+    Request {
+        #[arg(short, long)]
+        authors: Vec<Hex>,
+        #[arg(short, long)]
+        kinds: Vec<u32>,
+    },
+    /// Generate message requests
+    MessageRequest {
+        #[command(subcommand)]
+        subcommand: MessageRequestCommand,
     },
 }
 
@@ -41,6 +53,15 @@ pub enum EventCommand {
     RecommendRelay { relay: String },
 }
 
+// #[derive(Subcommand)]
+// pub enum RequestCommand {}
+
+#[derive(Subcommand)]
+pub enum MessageRequestCommand {
+    Event,
+    Request { id: String },
+}
+
 fn main() -> Result<()> {
     let args = Args::parse();
     match args.command {
@@ -54,6 +75,11 @@ fn main() -> Result<()> {
             } => set_metadata_event(&name, &about, &picture),
             EventCommand::TextNote { content } => text_note_event(&content),
             EventCommand::RecommendRelay { relay } => recommend_relay_event(&relay),
+        },
+        Command::Request { authors, kinds } => write_request(stdout(), authors, kinds),
+        Command::MessageRequest { subcommand } => match subcommand {
+            MessageRequestCommand::Event => event_message_request(stdin(), stdout()),
+            MessageRequestCommand::Request { id } => request_message_request(stdin(), stdout(), id),
         },
     }
 }
