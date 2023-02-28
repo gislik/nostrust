@@ -8,11 +8,18 @@ use serde_json::json;
 use std::str::FromStr;
 use std::{char, io, vec};
 
+/// METADATA is defined by [NIP-01](https://github.com/nostr-protocol/nips/blob/master/01.md).
 const METADATA: Kind = 0;
+/// TEXT is defined by [NIP-01](https://github.com/nostr-protocol/nips/blob/master/01.md).
 const TEXT: Kind = 1;
+/// RECOMMEND_RELAY is defined by [NIP-01](https://github.com/nostr-protocol/nips/blob/master/01.md).
 const RECOMMEND_RELAY: Kind = 2;
+/// RECOMMEND_RELAY is defined by [NIP-02](https://github.com/nostr-protocol/nips/blob/master/02.md).
+const CONTACT_LIST: Kind = 3;
 
+/// E is defined by [NIP-01](https://github.com/nostr-protocol/nips/blob/master/01.md).
 const E: char = 'e';
+/// P is defined by [NIP-01](https://github.com/nostr-protocol/nips/blob/master/01.md).
 const P: char = 'p';
 
 /// Event is at the heart of nostr. Defined in
@@ -74,6 +81,17 @@ impl Event {
         Event::new(RECOMMEND_RELAY, vec![], relay, pair)
     }
 
+    /// Constructs a new contact list.
+    /// Defined in [NIP-02](https://github.com/nostr-protocol/nips/blob/master/02.md).
+    pub fn contact_list(contacts: Vec<Contact>, pair: &Pair) -> Self {
+        let tags = contacts
+            .iter()
+            .map(|c| Tag::profile(c.key.to_owned(), &c.relay, &c.petname))
+            .collect();
+        Event::new(CONTACT_LIST, tags, "", pair)
+    }
+
+    /// Sets the tags of an event.
     pub fn set_tags(&mut self, tags: &Vec<Tag>) -> &mut Self {
         self.tags = tags.to_owned();
         self
@@ -106,19 +124,32 @@ impl Event {
     }
 }
 
+/// Kind denotes the event kind
 pub type Kind = u32;
 
+/// Tag denotes the event tag
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
 pub struct Tag(Vec<String>);
 
 impl Tag {
-    pub fn event(id: Hex, relay: String) -> Self {
-        Tag(vec![E.to_string(), id, relay])
+    pub fn event(id: Hex, relay: &str) -> Self {
+        Tag(vec![E.to_string(), id, relay.to_string()])
     }
 
-    pub fn profile(key: Hex, relay: String) -> Self {
-        Tag(vec![P.to_string(), key, relay])
+    pub fn profile(key: Hex, relay: &str, petname: &str) -> Self {
+        Tag(vec![
+            P.to_string(),
+            key.to_string(),
+            relay.to_string(),
+            petname.to_string(),
+        ])
     }
+}
+
+pub struct Contact {
+    key: Hex,
+    relay: String,
+    petname: String,
 }
 
 type Result<T> = std::result::Result<T, Error>;
@@ -171,7 +202,7 @@ pub mod tests {
             pubkey: "pubkey".into(),
             created_at: 0,
             kind: 1,
-            tags: vec![Tag::profile("profile".to_string(), "relays".to_string())],
+            tags: vec![Tag::profile("profile".to_string(), "relays", "petname")],
             content: "content".into(),
             sig: "sig".into(),
         }
