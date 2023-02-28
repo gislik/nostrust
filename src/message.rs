@@ -1,10 +1,12 @@
 use crate::event::Event;
 use crate::request::Request;
+use serde::de::Visitor;
 use serde::ser::SerializeSeq;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 /// Messages are sent from clients to relays. Defined in
 /// [NIP-01](https://github.com/nostr-protocol/nips/blob/master/01.md).
+#[derive(Debug, PartialEq)]
 pub enum MessageRequest {
     Event(Event),
     Request(String, Request),
@@ -37,6 +39,62 @@ impl Serialize for MessageRequest {
                 seq.end()
             }
         }
+    }
+}
+
+struct MessageRequestVisitor;
+
+impl<'de> Visitor<'de> for MessageRequestVisitor {
+    type Value = MessageRequest;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        formatter.write_str("message request array")
+    }
+
+    fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+    where
+        A: serde::de::SeqAccess<'de>,
+    {
+        if let Some(topic) = seq.next_element()? {
+            match topic {
+                "EVENT" => {
+                    let event = seq
+                        .next_element()?
+                        .ok_or(serde::de::Error::invalid_length(1, &self))?;
+                    Ok(MessageRequest::Event(event))
+                }
+                "REQ" => {
+                    let sequence_id = seq
+                        .next_element()?
+                        .ok_or(serde::de::Error::invalid_length(1, &self))?;
+                    let request = seq
+                        .next_element()?
+                        .ok_or(serde::de::Error::invalid_length(2, &self))?;
+                    Ok(MessageRequest::Request(sequence_id, request))
+                }
+                "CLOSE" => {
+                    let sequence_id = seq
+                        .next_element()?
+                        .ok_or(serde::de::Error::invalid_length(1, &self))?;
+                    Ok(MessageRequest::Close(sequence_id))
+                }
+                other => Err(serde::de::Error::unknown_variant(
+                    other,
+                    &["EVENT", "REQ", "CLOSE"],
+                )),
+            }
+        } else {
+            Err(serde::de::Error::invalid_length(0, &self))
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for MessageRequest {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        deserializer.deserialize_seq(MessageRequestVisitor)
     }
 }
 
@@ -73,7 +131,7 @@ mod tests {
     use super::*;
     use crate::event;
     use crate::request;
-    use serde_json::to_string;
+    use serde_json::{from_str, to_string};
 
     #[test]
     fn serialize_event_request_works() -> serde_json::Result<()> {
@@ -103,6 +161,35 @@ mod tests {
         let message = MessageRequest::Close("subid".to_string());
         let got = to_string(&message)?;
         let want = r#"["CLOSE","subid"]"#;
+        assert_eq!(got, want);
+        Ok(())
+    }
+
+    #[test]
+    fn deserialize_event_request_works() -> serde_json::Result<()> {
+        let data = format!(r#"["EVENT",{}]"#, event::tests::get_json());
+        let got: MessageRequest = from_str(&data)?;
+        let event = event::tests::get_simple_event();
+        let want = MessageRequest::Event(event);
+        assert_eq!(got, want);
+        Ok(())
+    }
+
+    #[test]
+    fn deserialize_request_request_works() -> serde_json::Result<()> {
+        let data = format!(r#"["REQ","subid",{}]"#, request::tests::get_json());
+        let got: MessageRequest = from_str(&data)?;
+        let request = request::tests::get_simple_request();
+        let want = MessageRequest::Request("subid".to_string(), request);
+        assert_eq!(got, want);
+        Ok(())
+    }
+
+    #[test]
+    fn deserialize_close_request_works() -> serde_json::Result<()> {
+        let data = r#"["CLOSE","subid"]"#;
+        let got: MessageRequest = from_str(&data)?;
+        let want = MessageRequest::Close("subid".to_string());
         assert_eq!(got, want);
         Ok(())
     }
