@@ -20,9 +20,21 @@ enum Command {
     /// Generate requests
     Request {
         #[arg(short, long)]
+        ids: Vec<Hex>,
+        #[arg(short, long)]
         authors: Vec<Hex>,
         #[arg(short, long)]
         kinds: Vec<u32>,
+        #[arg(short, long)]
+        e: Vec<Hex>,
+        #[arg(short, long)]
+        p: Vec<Hex>,
+        #[arg(short, long)]
+        since: Option<u32>,
+        #[arg(short, long)]
+        until: Option<u32>,
+        #[arg(short, long)]
+        limit: Option<u16>,
     },
     /// Generate message requests
     MessageRequest {
@@ -76,7 +88,16 @@ fn main() -> Result<()> {
             EventCommand::TextNote { content } => text_note_event(&content),
             EventCommand::RecommendRelay { relay } => recommend_relay_event(&relay),
         },
-        Command::Request { authors, kinds } => write_request(stdout(), authors, kinds),
+        Command::Request {
+            ids,
+            authors,
+            kinds,
+            e,
+            p,
+            since,
+            until,
+            limit,
+        } => write_request(stdout(), ids, authors, kinds, e, p, since, until, limit),
         Command::MessageRequest { subcommand } => match subcommand {
             MessageRequestCommand::Event => event_message_request(stdin(), stdout()),
             MessageRequestCommand::Request { id } => request_message_request(stdin(), stdout(), id),

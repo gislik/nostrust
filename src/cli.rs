@@ -56,10 +56,33 @@ pub fn event_message_request<R: Read, W: Write>(reader: R, writer: W) -> Result<
     Ok(())
 }
 
-pub fn write_request<W: Write>(writer: W, authors: Vec<Hex>, kinds: Vec<u32>) -> Result<()> {
+pub fn write_request<W: Write>(
+    writer: W,
+    ids: Vec<Hex>,
+    authors: Vec<Hex>,
+    kinds: Vec<u32>,
+    e: Vec<Hex>,
+    p: Vec<Hex>,
+    since: Option<u32>,
+    until: Option<u32>,
+    limit: Option<u16>,
+) -> Result<()> {
     let mut request = Request::new();
-    request.set_authors(authors);
-    request.set_kinds(kinds);
+    request
+        .set_ids(ids)
+        .set_authors(authors)
+        .set_kinds(kinds)
+        .set_events(e)
+        .set_profiles(p);
+    if let Some(since) = since {
+        request.set_since(since);
+    }
+    if let Some(until) = until {
+        request.set_until(until);
+    }
+    if let Some(limit) = limit {
+        request.set_limit(limit);
+    }
     serde_json::to_writer(writer, &request)?;
     Ok(())
 }
