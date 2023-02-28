@@ -1,4 +1,5 @@
-use crate::n;
+use crate::bech32;
+use crate::bech32::nsec::SECRET_PREFIX;
 use crate::signature::Signature;
 use secp256k1 as ec;
 use secp256k1::{schnorr, SECP256K1};
@@ -94,17 +95,10 @@ impl From<&PublicKey> for Pair {
 pub struct SecretKey(ec::SecretKey);
 
 impl SecretKey {
-    /// Tries to parse a secret key from its bech32 encoding. Defined in
-    /// [NIP-19](https://github.com/nostr-protocol/nips/blob/master/19.md)
-    pub fn from_nsec(nsec: &str) -> Result<Self> {
-        let raw = n::decode("nsec", nsec)?;
-        Self::try_from(raw.as_slice())
-    }
-
     /// Returns the bech32 encoded secret key. Defined in
     /// [NIP-19](https://github.com/nostr-protocol/nips/blob/master/19.md)
     pub fn display_secret_as_nsec(&self) -> String {
-        n::encode("nsec", self.0.secret_bytes().into()).unwrap() // never results in an error
+        bech32::encode(SECRET_PREFIX, self.0.secret_bytes().into()).unwrap() // never results in an error
     }
 
     /// Returns the hex encoded secret key
@@ -132,22 +126,9 @@ impl TryFrom<&[u8]> for SecretKey {
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
-pub struct PublicKey(ec::XOnlyPublicKey);
+pub struct PublicKey(pub(crate) ec::XOnlyPublicKey);
 
 impl PublicKey {
-    /// Tries to parse a public key from its bech32 encoding. Defined in
-    /// [NIP-19](https://github.com/nostr-protocol/nips/blob/master/19.md)
-    pub fn from_npub(npub: &str) -> Result<Self> {
-        let data = n::decode("npub", &npub)?;
-        Self::try_from(data.as_slice())
-    }
-
-    /// Encodes the public key to its bech32 encoding. Defined in
-    /// [NIP-19](https://github.com/nostr-protocol/nips/blob/master/19.md)
-    pub fn to_npub(&self) -> String {
-        n::encode("npub", self.0.serialize().into()).unwrap() // never results in an error
-    }
-
     pub fn serialize(&self) -> [u8; 32] {
         self.0.serialize()
     }
@@ -183,8 +164,8 @@ type Result<T> = std::result::Result<T, Error>;
 pub enum Error {
     #[error("key")]
     Key(#[from] ec::Error),
-    #[error("bech32")]
-    Bech32(#[from] n::Error),
+    // #[error("bech32")]
+    // Bech32(#[from] bech32::Error),
     #[error("prefix")]
     Prefix(String),
     #[error("variant")]
@@ -205,16 +186,6 @@ pub mod tests {
     #[test]
     fn secret_key_matches() -> Result<()> {
         let got = get_secret_key().display_secret();
-        let want = "0f1429676edf1ff8e5ca8202c8741cb695fc3ce24ec3adc0fcf234116f08f849";
-        assert_eq!(got, want);
-        Ok(())
-    }
-
-    #[test]
-    fn secret_key_from_nsec() -> Result<()> {
-        let nsec = "nsec1pu2zjemwmu0l3ew2sgpvsaquk62lc08zfmp6ms8u7g6pzmcglpysymcg0m";
-        let sk = SecretKey::from_nsec(nsec)?;
-        let got = sk.display_secret();
         let want = "0f1429676edf1ff8e5ca8202c8741cb695fc3ce24ec3adc0fcf234116f08f849";
         assert_eq!(got, want);
         Ok(())
@@ -249,23 +220,6 @@ pub mod tests {
     fn public_key_matches() -> Result<()> {
         let got = get_public_key().to_string();
         let want = "3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d";
-        assert_eq!(got, want);
-        Ok(())
-    }
-
-    #[test]
-    fn public_key_from_npub() -> Result<()> {
-        let npub = "npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6";
-        let got = PublicKey::from_npub(npub)?;
-        let want = get_public_key();
-        assert_eq!(got, want);
-        Ok(())
-    }
-
-    #[test]
-    fn public_key_to_npub() -> Result<()> {
-        let got = get_public_key().to_npub();
-        let want = "npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6";
         assert_eq!(got, want);
         Ok(())
     }
