@@ -1,16 +1,19 @@
 use crate::key::{self, Pair, PublicKey};
 use crate::signature::Signature;
 use crate::time::{self, Seconds};
-use crate::{cli, signature, Hex, Tag};
+use crate::{cli, signature, Hex};
 use secp256k1::hashes::{self, hex, hex::FromHex, sha256::Hash};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::io;
 use std::str::FromStr;
+use std::{char, io, vec};
 
 const METADATA: Kind = 0;
 const TEXT: Kind = 1;
 const RECOMMEND_RELAY: Kind = 2;
+
+const E: char = 'e';
+const P: char = 'p';
 
 /// Event is at the heart of nostr. Defined in
 /// [NIP-01](https://github.com/nostr-protocol/nips/blob/master/01.md).
@@ -105,6 +108,19 @@ impl Event {
 
 pub type Kind = u32;
 
+#[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
+pub struct Tag(Vec<String>);
+
+impl Tag {
+    pub fn event(id: Hex, relay: String) -> Self {
+        Tag(vec![E.to_string(), id, relay])
+    }
+
+    pub fn profile(key: Hex, relay: String) -> Self {
+        Tag(vec![P.to_string(), key, relay])
+    }
+}
+
 type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug)]
@@ -155,11 +171,7 @@ pub mod tests {
             pubkey: "pubkey".into(),
             created_at: 0,
             kind: 1,
-            tags: vec![vec![
-                "p".to_string(),
-                "profile".to_string(),
-                "relays".to_string(),
-            ]],
+            tags: vec![Tag::profile("profile".to_string(), "relays".to_string())],
             content: "content".into(),
             sig: "sig".into(),
         }
