@@ -263,4 +263,17 @@ pub mod tests {
         event.verify()?;
         Ok(())
     }
+
+    fn get_ots_json() -> &'static str {
+        r#"{"id":"id","pubkey":"pubkey","created_at":0,"kind":1,"tags":[["p","profile","relays","petname"]],"content":"content","sig":"sig","ots":"ots"}"#
+    }
+
+    #[test]
+    fn deserialize_with_ots_works() -> serde_json::Result<()> {
+        let data = get_ots_json();
+        let got: Event = from_str(data)?;
+        let want = get_simple_event();
+        assert_eq!(got, want);
+        Ok(())
+    }
 }
