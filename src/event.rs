@@ -209,7 +209,7 @@ pub mod tests {
     }
 
     pub fn get_json() -> &'static str {
-        r#"{"id":"id","pubkey":"pubkey","created_at":0,"kind":1,"tags":[["p","profile","relays"]],"content":"content","sig":"sig"}"#
+        r#"{"id":"id","pubkey":"pubkey","created_at":0,"kind":1,"tags":[["p","profile","relays","petname"]],"content":"content","sig":"sig"}"#
     }
 
     #[test]
