@@ -55,8 +55,8 @@ impl<'de> Visitor<'de> for MessageRequestVisitor {
     where
         A: serde::de::SeqAccess<'de>,
     {
-        if let Some(topic) = seq.next_element()? {
-            match topic {
+        if let Some(topic) = seq.next_element::<&str>()? {
+            match topic.to_string().to_uppercase().as_str() {
                 "EVENT" => {
                     let event = seq
                         .next_element()?
@@ -98,6 +98,7 @@ impl<'de> Deserialize<'de> for MessageRequest {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub enum MessageResponse {
     Event(String, Event),
     Notice(String),
@@ -123,6 +124,56 @@ impl Serialize for MessageResponse {
                 seq.end()
             }
         }
+    }
+}
+
+struct MessageResponseVisitor;
+
+impl<'de> Visitor<'de> for MessageResponseVisitor {
+    type Value = MessageResponse;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        formatter.write_str("message response array")
+    }
+
+    fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+    where
+        A: serde::de::SeqAccess<'de>,
+    {
+        if let Some(topic) = seq.next_element::<&str>()? {
+            match topic.to_string().to_uppercase().as_str() {
+                "EVENT" => {
+                    let sequence_id = seq
+                        .next_element()?
+                        .ok_or(serde::de::Error::invalid_length(1, &self))?;
+                    let event = seq
+                        .next_element()?
+                        .ok_or(serde::de::Error::invalid_length(2, &self))?;
+                    Ok(MessageResponse::Event(sequence_id, event))
+                }
+                "NOTICE" => {
+                    let notice = seq
+                        .next_element()?
+                        .ok_or(serde::de::Error::invalid_length(1, &self))?;
+                    Ok(MessageResponse::Notice(notice))
+                }
+                other => Err(serde::de::Error::unknown_variant(
+                    other,
+                    &["EVENT", "NOTICE"],
+                )),
+            }
+        } else {
+            Err(serde::de::Error::invalid_length(0, &self))
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for MessageResponse {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        deserializer.deserialize_seq(MessageResponseVisitor)
     }
 }
 
@@ -167,7 +218,7 @@ mod tests {
 
     #[test]
     fn deserialize_event_request_works() -> serde_json::Result<()> {
-        let data = format!(r#"["EVENT",{}]"#, event::tests::get_json());
+        let data = format!(r#"["event",{}]"#, event::tests::get_json());
         let got: MessageRequest = from_str(&data)?;
         let event = event::tests::get_simple_event();
         let want = MessageRequest::Event(event);
@@ -177,7 +228,7 @@ mod tests {
 
     #[test]
     fn deserialize_request_request_works() -> serde_json::Result<()> {
-        let data = format!(r#"["REQ","subid",{}]"#, request::tests::get_json());
+        let data = format!(r#"["req","subid",{}]"#, request::tests::get_json());
         let got: MessageRequest = from_str(&data)?;
         let request = request::tests::get_simple_request();
         let want = MessageRequest::Request("subid".to_string(), request);
@@ -187,7 +238,7 @@ mod tests {
 
     #[test]
     fn deserialize_close_request_works() -> serde_json::Result<()> {
-        let data = r#"["CLOSE","subid"]"#;
+        let data = r#"["close","subid"]"#;
         let got: MessageRequest = from_str(&data)?;
         let want = MessageRequest::Close("subid".to_string());
         assert_eq!(got, want);
@@ -208,10 +259,29 @@ mod tests {
 
     #[test]
     fn serialize_notice_response_works() -> serde_json::Result<()> {
-        let notice = "notice".to_string();
+        let notice = "this".to_string();
         let message = MessageResponse::Notice(notice);
         let got = to_string(&message)?;
-        let want = r#"["NOTICE","notice"]"#;
+        let want = r#"["NOTICE","this"]"#;
+        assert_eq!(got, want);
+        Ok(())
+    }
+
+    #[test]
+    fn deserialize_event_response_works() -> serde_json::Result<()> {
+        let data = format!(r#"["event","subid",{}]"#, event::tests::get_json());
+        let got: MessageResponse = from_str(&data)?;
+        let event = event::tests::get_simple_event();
+        let want = MessageResponse::Event("subid".to_string(), event);
+        assert_eq!(got, want);
+        Ok(())
+    }
+
+    #[test]
+    fn deserialize_notice_response_works() -> serde_json::Result<()> {
+        let data = r#"["notice","this"]"#;
+        let got: MessageResponse = from_str(&data)?;
+        let want = MessageResponse::Notice("this".to_string());
         assert_eq!(got, want);
         Ok(())
     }
