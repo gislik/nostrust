@@ -3,11 +3,11 @@ pub mod nprofile;
 pub mod npub;
 pub mod nsec;
 
-pub use bech32::{FromBase32, ToBase32};
-use std::str::Utf8Error;
-use thiserror::Error;
+use std::{result, str::Utf8Error};
 
 use crate::key;
+pub use bech32::{FromBase32, ToBase32};
+use thiserror::Error;
 
 pub const SPECIAL_TYPE: u8 = 0x0;
 pub const EVENT_SIZE: u8 = 0x20;
@@ -25,9 +25,19 @@ pub trait FromBech32: Sized {
 
     /// Tries to parse a public key from its bech32 encoding. Defined in
     /// [NIP-19](https://github.com/nostr-protocol/nips/blob/master/19.md)
-    fn from_bech32(s: &str) -> std::result::Result<Self, Self::Err>;
+    fn from_bech32(s: &str) -> result::Result<Self, Self::Err>;
 }
 
+/// Encode a byte slice to bech32 encoded string with a prefix.
+pub fn encode(prefix: &str, data: Vec<u8>) -> Result<String> {
+    Ok(bech32::encode(
+        prefix,
+        data.to_base32(),
+        bech32::Variant::Bech32,
+    )?)
+}
+
+/// Docode a string slice with a prefix to byte slice.
 pub fn decode(prefix: &str, data: &str) -> Result<Vec<u8>> {
     let (hrp, data, variant) = bech32::decode(data)?;
     if hrp != prefix {
@@ -40,11 +50,7 @@ pub fn decode(prefix: &str, data: &str) -> Result<Vec<u8>> {
     Ok(data)
 }
 
-pub fn encode(prefix: &str, data: Vec<u8>) -> Result<String> {
-    bech32::encode(prefix, data.to_base32(), bech32::Variant::Bech32).map_err(From::from)
-}
-
-type Result<T> = std::result::Result<T, Error>;
+type Result<T> = result::Result<T, Error>;
 
 #[derive(Debug, Error)]
 #[error("bech32 error")]

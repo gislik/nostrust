@@ -1,5 +1,6 @@
-use super::{FromBech32, ToBech32};
-use crate::bech32;
+use std::result;
+
+use crate::bech32::{self, FromBech32, ToBech32};
 use crate::key::PublicKey;
 
 const PUBLIC_PREFIX: &str = "npub";
@@ -13,14 +14,14 @@ impl ToBech32 for PublicKey {
 impl FromBech32 for PublicKey {
     type Err = bech32::Error;
 
-    fn from_bech32(npub: &str) -> Result<Self> {
-        let raw = bech32::decode(PUBLIC_PREFIX, &npub)?;
-        let key = Self::try_from(raw.as_slice())?;
+    fn from_bech32(s: &str) -> Result<Self> {
+        let bytes = bech32::decode(PUBLIC_PREFIX, &s)?;
+        let key = Self::try_from(bytes.as_slice())?;
         Ok(key)
     }
 }
 
-type Result<T> = std::result::Result<T, bech32::Error>;
+type Result<T> = result::Result<T, bech32::Error>;
 
 #[cfg(test)]
 mod tests {

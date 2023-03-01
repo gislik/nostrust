@@ -1,3 +1,5 @@
+use std::fmt;
+
 use crate::event::Event;
 use crate::request::Request;
 use serde::de::Visitor;
@@ -47,7 +49,7 @@ struct MessageRequestVisitor;
 impl<'de> Visitor<'de> for MessageRequestVisitor {
     type Value = MessageRequest;
 
-    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_str("message request array")
     }
 
@@ -132,7 +134,7 @@ struct MessageResponseVisitor;
 impl<'de> Visitor<'de> for MessageResponseVisitor {
     type Value = MessageResponse;
 
-    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_str("message response array")
     }
 

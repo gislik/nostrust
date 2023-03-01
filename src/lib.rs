@@ -7,13 +7,4 @@ pub mod request;
 pub mod signature;
 pub mod time;
 
-// use crate::bech32::*;
-// use thiserror::Error;
-
 pub type Hex = String;
-
-// #[derive(Debug, Error)]
-// pub enum Error {
-//     #[error("profile error")]
-//     ProfileError(#[from] nprofile::Error),
-// }

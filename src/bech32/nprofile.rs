@@ -1,3 +1,5 @@
+use std::result;
+
 use crate::bech32::{self, *};
 use crate::key::PublicKey;
 
@@ -20,26 +22,26 @@ impl Profile {
 
 impl ToBech32 for Profile {
     fn to_bech32(&self) -> String {
-        let mut output = vec![SPECIAL_TYPE, PUBKEY_SIZE];
+        let mut bytes = vec![SPECIAL_TYPE, PUBKEY_SIZE];
         let bs = self
             .public_key
             .map_or([0; PUBKEY_SIZE as usize], |x| x.serialize());
-        output.append(&mut bs.as_slice().to_owned());
+        bytes.append(&mut bs.as_slice().to_owned());
         for relay in &self.relays {
             let mut bs = relay.as_bytes().to_owned();
-            output.append(&mut vec![RELAY_TYPE, bs.len() as u8]);
-            output.append(&mut bs);
+            bytes.append(&mut vec![RELAY_TYPE, bs.len() as u8]);
+            bytes.append(&mut bs);
         }
-        bech32::encode(PROFILE_PREFIX, output).expect("encoding nprofile")
+        bech32::encode(PROFILE_PREFIX, bytes).expect("encoding nprofile")
     }
 }
 
 impl FromBech32 for Profile {
     type Err = bech32::Error;
 
-    fn from_bech32(nprofile: &str) -> Result<Self> {
-        let data = bech32::decode(PROFILE_PREFIX, nprofile)?;
-        let mut iter = data.iter();
+    fn from_bech32(s: &str) -> Result<Self> {
+        let bytes = bech32::decode(PROFILE_PREFIX, s)?;
+        let mut iter = bytes.iter();
         let mut profile = Profile {
             public_key: None,
             relays: vec![],
@@ -74,39 +76,7 @@ impl FromBech32 for Profile {
     }
 }
 
-type Result<T> = std::result::Result<T, Error>;
-
-// #[derive(Debug, Error)]
-// pub enum Error {
-//     #[error("invalid type (expected {expected}, found {found})")]
-//     InvalidType { expected: u8, found: u8 },
-//     #[error("length is missing")]
-//     MissingLength,
-//     #[error("invalid length (expected {expected}, found {found})")]
-//     InvalidLength { expected: usize, found: usize },
-//     #[error("utf8 error")]
-//     Utf8Error(#[from] std::str::Utf8Error),
-//     #[error("bech32 encoding error")]
-//     Bech32(#[from] n::Error),
-//     #[error("key error")]
-//     Key(#[from] key::Error),
-//     #[error("unexpected data (found {found:?})")]
-//     UnexpectedData { found: Vec<u8> },
-// }
-
-// impl Error {
-//     fn invalid_type<T>(expected: u8, found: u8) -> Result<T> {
-//         Err(Error::InvalidType { expected, found })
-//     }
-
-//     fn invalid_length<T>(expected: usize, found: usize) -> Result<T> {
-//         Err(Error::InvalidLength { expected, found })
-//     }
-
-//     fn unexpected_data<T>(found: Vec<u8>) -> Result<T> {
-//         Err(Error::UnexpectedData { found })
-//     }
-// }
+type Result<T> = result::Result<T, bech32::Error>;
 
 #[cfg(test)]
 mod tests {

@@ -1,6 +1,7 @@
+use std::str::FromStr;
+
 use secp256k1 as ec;
 use secp256k1::schnorr;
-use std::str::FromStr;
 
 #[derive(PartialEq, Debug)]
 pub struct Signature(schnorr::Signature);

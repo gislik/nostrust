@@ -1,12 +1,14 @@
+use std::str::FromStr;
+use std::{char, io, vec};
+
+use crate::cli;
 use crate::key::{self, Pair, PublicKey};
-use crate::signature::Signature;
+use crate::signature::{self, Signature};
 use crate::time::{self, Seconds};
-use crate::{cli, signature, Hex};
+use crate::Hex;
 use secp256k1::hashes::{self, hex, hex::FromHex, sha256::Hash};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::str::FromStr;
-use std::{char, io, vec};
 
 /// METADATA is defined by [NIP-01](https://github.com/nostr-protocol/nips/blob/master/01.md).
 const METADATA: Kind = 0;

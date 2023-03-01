@@ -1,3 +1,5 @@
+use std::result;
+
 use crate::bech32::{self, *};
 use crate::Hex;
 
@@ -11,23 +13,23 @@ pub struct Event {
 
 impl ToBech32 for Event {
     fn to_bech32(&self) -> String {
-        let mut data = vec![SPECIAL_TYPE, EVENT_SIZE];
-        data.append(&mut self.id.as_bytes().to_owned());
+        let mut bytes = vec![SPECIAL_TYPE, EVENT_SIZE];
+        bytes.append(&mut self.id.as_bytes().to_owned());
         for relay in &self.relays {
             let mut bs = relay.as_bytes().to_owned();
-            data.append(&mut vec![bech32::RELAY_TYPE, bs.len() as u8]);
-            data.append(&mut bs);
+            bytes.append(&mut vec![bech32::RELAY_TYPE, bs.len() as u8]);
+            bytes.append(&mut bs);
         }
-        bech32::encode(EVENT_PREFIX, data).expect("encoding nevent")
+        bech32::encode(EVENT_PREFIX, bytes).expect("encoding nevent")
     }
 }
 
 impl FromBech32 for Event {
     type Err = bech32::Error;
 
-    fn from_bech32(data: &str) -> Result<Self> {
-        let data = bech32::decode(EVENT_PREFIX, data)?;
-        let mut iter = data.iter();
+    fn from_bech32(s: &str) -> Result<Self> {
+        let bytes = bech32::decode(EVENT_PREFIX, s)?;
+        let mut iter = bytes.iter();
         let mut event = Event {
             id: "".to_string(),
             relays: vec![],
@@ -59,7 +61,7 @@ impl FromBech32 for Event {
     }
 }
 
-type Result<T> = std::result::Result<T, Error>;
+type Result<T> = result::Result<T, bech32::Error>;
 
 #[cfg(test)]
 mod tests {

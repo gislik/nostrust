@@ -1,10 +1,12 @@
+use std::result;
+use std::str::FromStr;
+
 use crate::bech32;
 use crate::bech32::nsec::SECRET_PREFIX;
 use crate::signature::Signature;
 use secp256k1 as ec;
-use secp256k1::{schnorr, SECP256K1};
-use std::result;
-use std::str::FromStr;
+use secp256k1::schnorr;
+use secp256k1::SECP256K1;
 use thiserror::Error;
 
 /// Keypair for the secp256k1 elliptic curve. Defined in

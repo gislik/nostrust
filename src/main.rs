@@ -1,7 +1,9 @@
-use clap::{Parser, Subcommand};
-use nostrust::event::Kind;
-use nostrust::{cli::*, Hex};
 use std::io::{stdin, stdout, Result};
+
+use clap::{Parser, Subcommand};
+use nostrust::cli::*;
+use nostrust::event::Kind;
+use nostrust::Hex;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about)]
