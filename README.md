@@ -6,22 +6,21 @@ Ideas I'm playing with include:
 
 - nostr libraries
 - relays
+- aggregators
 - micro apps
 
-The initial goal is to be able to:
+Library:
 
-- [x] Parse and verify an event
+- [x] Parse and verify an event 
 - [x] Generate and sign an event
-- [x] Construct messages
+- [x] Construct messages requests
+- [x] Parse message responses
+- [ ] Direct message support 
 
-Now that the initial goal has been accomplished, the next task is to create a 
-command line utility which leverages the parts that have been implemented:
+CLI: 
 
 - [x] Read an event as json from stdin and verify
 - [x] Generate an event from cli arguments and write to stdout as json.
-
-
-Next I think it would be cool to be able to manage nostr keys:
-
+- [x] Generate message requests
 - [ ] Generate a new key and print to stdout
 - [ ] Read the private key from an environment variable
