@@ -3,11 +3,14 @@ use std::str::FromStr;
 
 use crate::bech32;
 use crate::bech32::nsec::SECRET_PREFIX;
+use crate::encryption;
 use crate::signature::Signature;
 use secp256k1 as ec;
 use secp256k1::schnorr;
-use secp256k1::SECP256K1;
+use secp256k1::SECP256K1 as curve;
 use thiserror::Error;
+
+const KEY_SIZE: usize = 32;
 
 /// Keypair for the secp256k1 elliptic curve. Defined in
 /// [NIP-01](https://github.com/nostr-protocol/nips/blob/master/01.md).
@@ -32,6 +35,14 @@ impl Pair {
         }
     }
 
+    pub fn new_shared_secret(ours: &SecretKey, theirs: &PublicKey) -> Self {
+        let pk = theirs.0.public_key(ec::Parity::Even); // parity is not important
+        let sk = ours.0;
+        let secret = ec::ecdh::shared_secret_point(&pk, &sk);
+        let shared_sk = SecretKey::try_from(&secret[0..KEY_SIZE]).unwrap();
+        Pair::from(&shared_sk)
+    }
+
     /// Signs the data and produces a signature.
     pub fn sign<T>(&self, data: T) -> Result<Signature>
     where
@@ -40,7 +51,7 @@ impl Pair {
         match self.secret_key {
             Some(sk) => {
                 let msg = ec::Message::from_slice(data.as_ref())?;
-                let keypair = &ec::KeyPair::from_secret_key(SECP256K1, &sk.0);
+                let keypair = &ec::KeyPair::from_secret_key(curve, &sk.0);
                 let sig = ec::KeyPair::sign_schnorr(keypair, msg);
                 Ok(Signature::from(sig))
             }
@@ -58,7 +69,7 @@ impl Pair {
         let signature = &schnorr::Signature::from_str(sig.to_string().as_str())?;
         let message = &ec::Message::from_slice(data.as_ref())?;
         let pubkey = &pk.0;
-        SECP256K1.verify_schnorr(signature, message, pubkey)?;
+        curve.verify_schnorr(signature, message, pubkey)?;
         Ok(())
     }
 
@@ -75,7 +86,7 @@ impl Pair {
 
 impl From<&SecretKey> for Pair {
     fn from(sk: &SecretKey) -> Self {
-        let (xpk, _) = sk.0.x_only_public_key(SECP256K1);
+        let (xpk, _) = sk.0.x_only_public_key(curve);
         Self {
             secret_key: Some(sk.to_owned()),
             public_key: PublicKey(xpk),
@@ -97,6 +108,26 @@ impl From<&PublicKey> for Pair {
 pub struct SecretKey(ec::SecretKey);
 
 impl SecretKey {
+    /// Returns the ciphertext of the plaintext using AES-256-CBC.
+    /// [NIP-04](https://github.com/nostr-protocol/nips/blob/master/04.md)
+    pub fn encrypt<T>(&self, plaintext: T, iv: [u8; 16]) -> Vec<u8>
+    where
+        T: AsRef<[u8]>,
+    {
+        let key = self.0.secret_bytes();
+        encryption::encrypt256(key, iv, plaintext.as_ref())
+    }
+
+    /// Returns the plain text of the ciphertext using AES-256-CBC.
+    pub fn decrypt<T>(&self, ciphertext: T, iv: [u8; 16]) -> Result<Vec<u8>>
+    where
+        T: AsRef<[u8]>,
+    {
+        let key = self.0.secret_bytes();
+        let ciphertext = encryption::decrypt256(key, iv, ciphertext.as_ref())?;
+        Ok(ciphertext)
+    }
+
     /// Returns the bech32 encoded secret key. Defined in
     /// [NIP-19](https://github.com/nostr-protocol/nips/blob/master/19.md)
     pub fn display_secret_as_nsec(&self) -> String {
@@ -131,7 +162,7 @@ impl TryFrom<&[u8]> for SecretKey {
 pub struct PublicKey(pub(crate) ec::XOnlyPublicKey);
 
 impl PublicKey {
-    pub fn serialize(&self) -> [u8; 32] {
+    pub fn serialize(&self) -> [u8; KEY_SIZE] {
         self.0.serialize()
     }
 }
@@ -166,14 +197,14 @@ type Result<T> = std::result::Result<T, Error>;
 pub enum Error {
     #[error("key")]
     Key(#[from] ec::Error),
-    // #[error("bech32")]
-    // Bech32(#[from] bech32::Error),
     #[error("prefix")]
     Prefix(String),
     #[error("variant")]
     Variant(String),
     #[error("signature")]
     Signature(String),
+    #[error("encryption")]
+    Encryption(#[from] encryption::Error),
 }
 
 #[cfg(test)]
@@ -222,6 +253,25 @@ pub mod tests {
     fn public_key_matches() -> Result<()> {
         let got = get_public_key().to_string();
         let want = "3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d";
+        assert_eq!(got, want);
+        Ok(())
+    }
+
+    fn get_shared_secret() -> Pair {
+        let our_secret_key =
+            SecretKey::from_str("86b4ecc7994aec6de588b1472540613de5199fc0ed06a0fc463d33ce62aa66e6")
+                .unwrap();
+        let their_public_key =
+            PublicKey::from_str("0cc0cf586ebed5d568315b585089c84b320b0c3a7f37ab9ba9d45803407fbb9c")
+                .unwrap();
+        Pair::new_shared_secret(&our_secret_key, &their_public_key)
+    }
+
+    #[test]
+    fn shared_secret_matches() -> Result<()> {
+        let pair = get_shared_secret();
+        let got = pair.secret_key().unwrap().display_secret();
+        let want = "a2c2394b2e37d7fa70184ec34d1a89a27e3b318312e2534d812be2dc2543a44b";
         assert_eq!(got, want);
         Ok(())
     }
