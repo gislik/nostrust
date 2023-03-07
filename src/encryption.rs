@@ -2,25 +2,11 @@ use std::result;
 
 use aes::cipher::block_padding::{Pkcs7, UnpadError};
 use aes::cipher::{BlockDecryptMut, BlockEncryptMut, KeyIvInit};
-use aes::{Aes128, Aes256};
+use aes::Aes256;
 use cbc::{Decryptor, Encryptor};
 
-type Aes128CbcEnc = Encryptor<Aes128>;
-type Aes128CbcDec = Decryptor<Aes128>;
 type Aes256CbcEnc = Encryptor<Aes256>;
 type Aes256CbcDec = Decryptor<Aes256>;
-
-pub fn encrypt128(key: [u8; 16], iv: [u8; 16], msg: &[u8]) -> Vec<u8> {
-    let cipher = Aes128CbcEnc::new(&key.into(), &iv.into());
-    cipher.encrypt_padded_vec_mut::<Pkcs7>(msg)
-}
-
-pub fn decrypt128(key: [u8; 16], iv: [u8; 16], ciphertext: &[u8]) -> Result<Vec<u8>> {
-    let cipher = Aes128CbcDec::new(&key.into(), &iv.into());
-    cipher
-        .decrypt_padded_vec_mut::<Pkcs7>(ciphertext)
-        .map_err(Error::Padding)
-}
 
 pub fn encrypt256(key: [u8; 32], iv: [u8; 16], msg: &[u8]) -> Vec<u8> {
     let cipher = Aes256CbcEnc::new(&key.into(), &iv.into());
@@ -45,8 +31,24 @@ type Result<T> = result::Result<T, Error>;
 #[cfg(test)]
 mod tests {
     use super::*;
+    use aes::Aes128;
     use base64::prelude::BASE64_STANDARD;
     use base64::Engine;
+
+    type Aes128CbcEnc = Encryptor<Aes128>;
+    type Aes128CbcDec = Decryptor<Aes128>;
+
+    pub fn encrypt128(key: [u8; 16], iv: [u8; 16], msg: &[u8]) -> Vec<u8> {
+        let cipher = Aes128CbcEnc::new(&key.into(), &iv.into());
+        cipher.encrypt_padded_vec_mut::<Pkcs7>(msg)
+    }
+
+    pub fn decrypt128(key: [u8; 16], iv: [u8; 16], ciphertext: &[u8]) -> Result<Vec<u8>> {
+        let cipher = Aes128CbcDec::new(&key.into(), &iv.into());
+        cipher
+            .decrypt_padded_vec_mut::<Pkcs7>(ciphertext)
+            .map_err(Error::Padding)
+    }
 
     fn get_plaintext() -> [u8; 34] {
         *b"hello world! this is my plaintext."

@@ -1,12 +1,10 @@
-use std::io::{stdin, stdout, Error, ErrorKind, Read, Write};
+pub mod env;
 
-use crate::event::{Event, Kind};
-use crate::key::Pair;
-use crate::message::MessageRequest;
-use crate::request::Request;
-use crate::Hex;
+use std::io::{stdin, stdout, Read, Write};
+
 use anyhow::Result;
 use clap::{Parser, Subcommand};
+use nostrust::{Event, Hex, Kind, MessageRequest, Pair, Request};
 
 #[derive(Parser)]
 #[command(author, version, about, long_about)]
@@ -113,10 +111,6 @@ pub fn handle_args(args: Args, pair: &Pair) -> Result<()> {
         Command::Key => print_key(&mut stdout(), pair)?,
     };
     Ok(())
-}
-
-pub fn io_error(message: &str) -> Error {
-    Error::new(ErrorKind::Other, message)
 }
 
 pub fn read_event<R: Read>(reader: R) -> Result<Event> {

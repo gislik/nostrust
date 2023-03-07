@@ -24,5 +24,5 @@ CLI:
 - [x] Generate an event from cli arguments and write to stdout as json.
 - [x] Generate message requests
 - [x] Generate a new key and print to stdout
-- [ ] Read the private key from an environment variable
-- [ ] Derive the private key from a mnemonic, read from an environment variable
+- [x] Read the private key from an environment variable
+- [x] Derive the private key from a mnemonic, read from an environment variable

@@ -11,15 +11,6 @@ pub struct Profile {
     relays: Vec<String>,
 }
 
-impl Profile {
-    pub fn new(public_key: PublicKey, relays: Vec<String>) -> Self {
-        Self {
-            public_key: Some(public_key),
-            relays,
-        }
-    }
-}
-
 impl ToBech32 for Profile {
     fn to_bech32(&self) -> String {
         let mut bytes = vec![SPECIAL_TYPE, PUBKEY_SIZE];
@@ -82,6 +73,15 @@ type Result<T> = result::Result<T, bech32::Error>;
 mod tests {
     use super::*;
     use crate::key;
+
+    impl Profile {
+        pub fn new(public_key: PublicKey, relays: Vec<String>) -> Self {
+            Self {
+                public_key: Some(public_key),
+                relays,
+            }
+        }
+    }
 
     fn get_profile() -> Profile {
         let pk = key::tests::get_public_key();

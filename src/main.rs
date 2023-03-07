@@ -1,8 +1,10 @@
+pub mod cli;
+
 use anyhow::Result;
 use clap::Parser;
-use nostrust::cli::*;
-use nostrust::env::{var, Var};
-use nostrust::key::Pair;
+use cli::env::*;
+use cli::*;
+use nostrust::Pair;
 
 fn main() -> Result<()> {
     let pair = var("SECRET_KEY")

@@ -1,7 +1,7 @@
+use std::io::ErrorKind;
 use std::str::FromStr;
 use std::{char, io, vec};
 
-use crate::cli;
 use crate::key::{self, Pair, PublicKey};
 use crate::signature::{self, Signature};
 use crate::time::{self, Seconds};
@@ -186,12 +186,16 @@ impl From<hex::Error> for Error {
 impl From<Error> for io::Error {
     fn from(err: Error) -> Self {
         match err {
-            Error::HashMismatch => cli::io_error("hash mismatch"),
-            Error::Verification(_err) => cli::io_error("verification error"),
-            Error::Signature(_err) => cli::io_error("signature error"),
-            Error::Hex(_err) => cli::io_error("hex error"),
+            Error::HashMismatch => io_error("hash mismatch"),
+            Error::Verification(_err) => io_error("verification error"),
+            Error::Signature(_err) => io_error("signature error"),
+            Error::Hex(_err) => io_error("hex error"),
         }
     }
+}
+
+pub fn io_error(message: &str) -> io::Error {
+    io::Error::new(ErrorKind::Other, message)
 }
 
 #[cfg(test)]
