@@ -1,10 +1,119 @@
-use std::io::{stdout, Error, ErrorKind, Read, Result, Write};
+use std::io::{stdin, stdout, Error, ErrorKind, Read, Write};
 
 use crate::event::{Event, Kind};
 use crate::key::Pair;
 use crate::message::MessageRequest;
 use crate::request::Request;
 use crate::Hex;
+use anyhow::Result;
+use clap::{Parser, Subcommand};
+
+#[derive(Parser)]
+#[command(author, version, about, long_about)]
+pub struct Args {
+    #[command(subcommand)]
+    command: Command,
+}
+
+#[derive(Subcommand)]
+enum Command {
+    /// Verify and generate events
+    Event {
+        #[command(subcommand)]
+        subcommand: EventCommand,
+    },
+    /// Generate requests
+    Request {
+        #[arg(short, long)]
+        ids: Vec<Hex>,
+        #[arg(short, long)]
+        authors: Vec<Hex>,
+        #[arg(short, long)]
+        kinds: Vec<u32>,
+        #[arg(short, long)]
+        e: Vec<Hex>,
+        #[arg(short, long)]
+        p: Vec<Hex>,
+        #[arg(short, long)]
+        since: Option<u32>,
+        #[arg(short, long)]
+        until: Option<u32>,
+        #[arg(short, long)]
+        limit: Option<u16>,
+    },
+    /// Generate message requests
+    MessageRequest {
+        #[command(subcommand)]
+        subcommand: MessageRequestCommand,
+    },
+    /// Print key
+    Key,
+}
+
+#[derive(Subcommand)]
+pub enum EventCommand {
+    /// Verifies an event on stdin
+    Verify,
+    /// Output a new event to stdout
+    Generate {
+        #[arg(short, long)]
+        kind: Kind,
+        content: String,
+    },
+    /// Output a new set metadata event to stdout
+    SetMetadata {
+        name: String,
+        about: String,
+        picture: String,
+    },
+    /// Output a new text note to stdout
+    TextNote { content: String },
+    /// Output a new recommend relay to stdout
+    RecommendRelay { relay: String },
+}
+
+// #[derive(Subcommand)]
+// pub enum RequestCommand {}
+
+#[derive(Subcommand)]
+pub enum MessageRequestCommand {
+    Event,
+    Request { id: String },
+}
+
+pub fn handle_args(args: Args, pair: &Pair) -> Result<()> {
+    match args.command {
+        Command::Event { subcommand } => match subcommand {
+            EventCommand::Verify => verify_event(stdin())?,
+            EventCommand::Generate { kind, content } => generate_event(kind, &content)?,
+            EventCommand::SetMetadata {
+                name,
+                about,
+                picture,
+            } => set_metadata_event(&name, &about, &picture)?,
+            EventCommand::TextNote { content } => text_note_event(&content)?,
+            EventCommand::RecommendRelay { relay } => recommend_relay_event(&relay)?,
+        },
+        Command::Request {
+            ids,
+            authors,
+            kinds,
+            e,
+            p,
+            since,
+            until,
+            limit,
+        } => write_request(stdout(), ids, authors, kinds, e, p, since, until, limit)?,
+        Command::MessageRequest { subcommand } => match subcommand {
+            MessageRequestCommand::Event => event_message_request(stdin(), stdout())?,
+            MessageRequestCommand::Request { id } => {
+                request_message_request(stdin(), stdout(), id)?
+            }
+        },
+        Command::Key => print_key(&mut stdout(), pair)?,
+    };
+    Ok(())
+}
 
 pub fn io_error(message: &str) -> Error {
     Error::new(ErrorKind::Other, message)
@@ -97,5 +206,10 @@ pub fn request_message_request<R: Read, W: Write>(reader: R, writer: W, id: Stri
     let request = read_request(reader)?;
     let message = MessageRequest::Request(id, request);
     serde_json::to_writer(writer, &message)?;
+    Ok(())
+}
+
+pub fn print_key<W: Write>(writer: &mut W, pair: &Pair) -> Result<()> {
+    writer.write_all(pair.secret_key().unwrap().display_secret_as_nsec().as_ref())?;
     Ok(())
 }

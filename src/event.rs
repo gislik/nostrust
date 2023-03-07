@@ -156,7 +156,8 @@ pub struct Contact {
 
 type Result<T> = std::result::Result<T, Error>;
 
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
+#[error("event error")]
 pub enum Error {
     HashMismatch,
     Signature(signature::Error),
