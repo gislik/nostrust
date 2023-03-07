@@ -99,3 +99,9 @@ pub fn request_message_request<R: Read, W: Write>(reader: R, writer: W, id: Stri
     serde_json::to_writer(writer, &message)?;
     Ok(())
 }
+
+pub fn print_key<W: Write>(writer: &mut W) -> Result<()> {
+    let pair = Pair::generate();
+    writer.write_all(pair.secret_key().unwrap().display_secret_as_nsec().as_ref())?;
+    Ok(())
+}

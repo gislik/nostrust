@@ -43,6 +43,8 @@ enum Command {
         #[command(subcommand)]
         subcommand: MessageRequestCommand,
     },
+    /// Print key
+    Key,
 }
 
 #[derive(Subcommand)]
@@ -104,5 +106,6 @@ fn main() -> Result<()> {
             MessageRequestCommand::Event => event_message_request(stdin(), stdout()),
             MessageRequestCommand::Request { id } => request_message_request(stdin(), stdout(), id),
         },
+        Command::Key => print_key(&mut stdout()),
     }
 }

@@ -23,5 +23,5 @@ CLI:
 - [x] Read an event as json from stdin and verify
 - [x] Generate an event from cli arguments and write to stdout as json.
 - [x] Generate message requests
-- [ ] Generate a new key and print to stdout
+- [x] Generate a new key and print to stdout
 - [ ] Read the private key from an environment variable
