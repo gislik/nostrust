@@ -4,6 +4,7 @@ pub mod encryption;
 pub mod event;
 pub mod key;
 pub mod message;
+pub mod mnemonic;
 pub mod request;
 pub mod signature;
 pub mod time;

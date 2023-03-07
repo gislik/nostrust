@@ -15,7 +15,8 @@ Library:
 - [x] Generate and sign an event
 - [x] Construct messages requests
 - [x] Parse message responses
-- [ ] Direct message support 
+- [x] Direct message support 
+- [x] Seed phrases
 
 CLI: 
 

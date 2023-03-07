@@ -4,6 +4,8 @@ use std::str::FromStr;
 use crate::bech32;
 use crate::bech32::nsec::SECRET_PREFIX;
 use crate::encryption;
+use crate::mnemonic;
+use crate::mnemonic::Mnemonic;
 use crate::signature::Signature;
 use secp256k1 as ec;
 use secp256k1::schnorr;
@@ -33,6 +35,13 @@ impl Pair {
             secret_key,
             public_key,
         }
+    }
+
+    /// Creates a new pair from a mnemonic.
+    /// Defined in [NIP-01](https://github.com/nostr-protocol/nips/blob/master/06.md).
+    pub fn from_mnemonic(s: &str) -> Result<Self> {
+        let mnemonic = Mnemonic::new(s)?;
+        Pair::try_from(&mnemonic)
     }
 
     pub fn new_shared_secret(ours: &SecretKey, theirs: &PublicKey) -> Self {
@@ -100,6 +109,17 @@ impl From<&PublicKey> for Pair {
             secret_key: None,
             public_key: pk.to_owned(),
         }
+    }
+}
+
+impl TryFrom<&Mnemonic> for Pair {
+    type Error = Error;
+
+    fn try_from(mnemonic: &Mnemonic) -> result::Result<Self, Self::Error> {
+        let bytes = mnemonic.to_bytes();
+        let sk = SecretKey::try_from(&bytes[..])?;
+        let pair = Pair::from(&sk);
+        Ok(pair)
     }
 }
 
@@ -205,11 +225,14 @@ pub enum Error {
     Signature(String),
     #[error("encryption")]
     Encryption(#[from] encryption::Error),
+    #[error("mnemonic")]
+    Mnemonic(#[from] mnemonic::Error),
 }
 
 #[cfg(test)]
 pub mod tests {
     use super::*;
+    use crate::bech32::ToBech32;
 
     fn get_secret_key() -> SecretKey {
         SecretKey::from_str("0f1429676edf1ff8e5ca8202c8741cb695fc3ce24ec3adc0fcf234116f08f849")
@@ -272,6 +295,16 @@ pub mod tests {
         let pair = get_shared_secret();
         let got = pair.secret_key().unwrap().display_secret();
         let want = "a2c2394b2e37d7fa70184ec34d1a89a27e3b318312e2534d812be2dc2543a44b";
+        assert_eq!(got, want);
+        Ok(())
+    }
+
+    #[test]
+    fn from_mnemonic_works() -> Result<()> {
+        let s = crate::mnemonic::tests::get_mnemonic_str();
+        let pair = Pair::from_mnemonic(s)?;
+        let got = pair.public_key().to_bech32();
+        let want = "npub1gw5zyqa9yj2rrq5u683y9sfdpv49hmgfkw37hupgvf5vrtdmr60sspjdzz";
         assert_eq!(got, want);
         Ok(())
     }
