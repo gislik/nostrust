@@ -28,7 +28,7 @@ impl ToBech32 for Profile {
 }
 
 impl FromBech32 for Profile {
-    type Err = bech32::Error;
+    type Error = bech32::Error;
 
     fn from_bech32(s: &str) -> Result<Self> {
         let bytes = bech32::decode(PROFILE_PREFIX, s)?;

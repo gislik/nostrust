@@ -6,7 +6,7 @@ use crate::key::SecretKey;
 pub(crate) const SECRET_PREFIX: &str = "nsec";
 
 impl FromBech32 for SecretKey {
-    type Err = bech32::Error;
+    type Error = bech32::Error;
 
     fn from_bech32(s: &str) -> Result<Self> {
         let bytes = bech32::decode(SECRET_PREFIX, s)?;

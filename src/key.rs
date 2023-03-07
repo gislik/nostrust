@@ -3,6 +3,7 @@ use std::str::FromStr;
 
 use crate::bech32;
 use crate::bech32::nsec::SECRET_PREFIX;
+use crate::bech32::FromBech32;
 use crate::encryption;
 use crate::mnemonic;
 use crate::mnemonic::Mnemonic;
@@ -30,6 +31,15 @@ impl Pair {
         S: AsRef<str>,
     {
         let sk = SecretKey::from_str(secret_key.as_ref())?;
+        let pair = Self::from(&sk);
+        Ok(pair)
+    }
+
+    pub fn from_nsec<S>(s: S) -> bech32::Result<Self>
+    where
+        S: AsRef<str>,
+    {
+        let sk = SecretKey::from_bech32(s.as_ref())?;
         let pair = Self::from(&sk);
         Ok(pair)
     }

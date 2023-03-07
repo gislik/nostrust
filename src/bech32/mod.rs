@@ -21,11 +21,11 @@ pub trait ToBech32 {
 }
 
 pub trait FromBech32: Sized {
-    type Err;
+    type Error;
 
     /// Tries to parse a public key from its bech32 encoding. Defined in
     /// [NIP-19](https://github.com/nostr-protocol/nips/blob/master/19.md)
-    fn from_bech32(s: &str) -> result::Result<Self, Self::Err>;
+    fn from_bech32(s: &str) -> result::Result<Self, Self::Error>;
 }
 
 /// Encode a byte slice to bech32 encoded string with a prefix.
@@ -50,7 +50,7 @@ pub fn decode(prefix: &str, data: &str) -> Result<Vec<u8>> {
     Ok(data)
 }
 
-type Result<T> = result::Result<T, Error>;
+pub(crate) type Result<T> = result::Result<T, Error>;
 
 #[derive(Debug, Error)]
 #[error("bech32 error")]

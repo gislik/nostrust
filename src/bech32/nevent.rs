@@ -25,7 +25,7 @@ impl ToBech32 for Event {
 }
 
 impl FromBech32 for Event {
-    type Err = bech32::Error;
+    type Error = bech32::Error;
 
     fn from_bech32(s: &str) -> Result<Self> {
         let bytes = bech32::decode(EVENT_PREFIX, s)?;
