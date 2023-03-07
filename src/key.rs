@@ -25,6 +25,15 @@ pub struct Pair {
 }
 
 impl Pair {
+    pub fn new<S>(secret_key: S) -> Result<Self>
+    where
+        S: AsRef<str>,
+    {
+        let sk = SecretKey::from_str(secret_key.as_ref())?;
+        let pair = Self::from(&sk);
+        Ok(pair)
+    }
+
     /// Generates a new SECP256k1 key pair.
     pub fn generate() -> Self {
         let (sk, pk) = ec::generate_keypair(&mut ec::rand::thread_rng());
@@ -39,8 +48,11 @@ impl Pair {
 
     /// Creates a new pair from a mnemonic.
     /// Defined in [NIP-01](https://github.com/nostr-protocol/nips/blob/master/06.md).
-    pub fn from_mnemonic(s: &str) -> Result<Self> {
-        let mnemonic = Mnemonic::new(s)?;
+    pub fn from_mnemonic<S>(s: S) -> Result<Self>
+    where
+        S: AsRef<str>,
+    {
+        let mnemonic = Mnemonic::new(s.as_ref())?;
         Pair::try_from(&mnemonic)
     }
 
