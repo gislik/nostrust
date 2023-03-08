@@ -33,6 +33,10 @@ pub struct Event {
     created_at: Seconds,
     kind: Kind,
     tags: Vec<Tag>,
+    /// The subject can be used when rendering threads
+    /// Defined in [NIP-14](https://github.com/nostr-protocol/nips/blob/master/14.md).
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    subject: Option<String>,
     content: String,
     sig: Hex,
 }
@@ -50,6 +54,7 @@ impl Event {
             created_at,
             kind,
             tags,
+            subject: None,
             content: content.to_string(),
             sig: "".to_string(),
         };
@@ -96,6 +101,12 @@ impl Event {
     /// Sets the tags of an event.
     pub fn set_tags(&mut self, tags: &Vec<Tag>) -> &mut Self {
         self.tags = tags.to_owned();
+        self
+    }
+
+    /// Sets the subject of an event.
+    pub fn set_subject(&mut self, subject: Option<String>) -> &mut Self {
+        self.subject = subject;
         self
     }
 
@@ -205,17 +216,18 @@ pub mod tests {
 
     pub fn get_simple_event() -> Event {
         Event {
-            id: "id".into(),
-            pubkey: "pubkey".into(),
+            id: "id".to_string(),
+            pubkey: "pubkey".to_string(),
             created_at: 0,
             kind: 1,
             tags: vec![Tag::profile("profile".to_string(), "relays", "petname")],
-            content: "content".into(),
-            sig: "sig".into(),
+            subject: None,
+            content: "content".to_string(),
+            sig: "sig".to_string(),
         }
     }
 
-    pub fn get_json() -> &'static str {
+    pub fn get_simple_json() -> &'static str {
         r#"{"id":"id","pubkey":"pubkey","created_at":0,"kind":1,"tags":[["p","profile","relays","petname"]],"content":"content","sig":"sig"}"#
     }
 
@@ -223,29 +235,54 @@ pub mod tests {
     fn serialize_works() -> serde_json::Result<()> {
         let event = get_simple_event();
         let got = to_string(&event)?;
-        let want = get_json();
+        let want = get_simple_json();
+        assert_eq!(got, want);
+        Ok(())
+    }
+
+    pub fn get_simple_subject_json() -> &'static str {
+        r#"{"id":"id","pubkey":"pubkey","created_at":0,"kind":1,"tags":[["p","profile","relays","petname"]],"subject":"subject","content":"content","sig":"sig"}"#
+    }
+
+    #[test]
+    fn serialize_with_subject_works() -> serde_json::Result<()> {
+        let mut event = get_simple_event();
+        event.subject = Some("subject".to_string());
+        let got = to_string(&event)?;
+        let want = get_simple_subject_json();
         assert_eq!(got, want);
         Ok(())
     }
 
     #[test]
     fn deserialize_works() -> serde_json::Result<()> {
-        let data = get_json();
+        let data = get_simple_json();
         let got: Event = from_str(data)?;
         let want = get_simple_event();
         assert_eq!(got, want);
         Ok(())
     }
 
+    #[test]
+    fn deserialize_with_subject_works() -> serde_json::Result<()> {
+        let data = get_simple_subject_json();
+        let got: Event = from_str(data)?;
+        let mut want = get_simple_event();
+        want.subject = Some("subject".to_string());
+        assert_eq!(got, want);
+        Ok(())
+    }
+
     fn get_event() -> Event {
         Event{
-            id: "6623d3fb9270903631ee00c9683be7065726244518ea3fe334b3b490a8bece20".into(),
-            pubkey: "c2e54fc64221e3b58dd960507db72909956cc0aa41019626ca64112984b85c2d".into(),
+            id: "6623d3fb9270903631ee00c9683be7065726244518ea3fe334b3b490a8bece20".to_string(),
+            pubkey: "c2e54fc64221e3b58dd960507db72909956cc0aa41019626ca64112984b85c2d".to_string(),
             created_at: 1675631647,
             kind: 70202,
             tags: vec![],
-            content: "test".into(),
-            sig: "aaeba9765a6a6a82833fc5593fc3fe70997371a4fbd50afc064e2a50d7c21b2a7910f796ead8a4fcd2f7c592b8603c9cbe4f4756c6650127ba8334782ca53247".into(),
+            subject: Some("Subject".to_string()),
+            content: "test".to_string(),
+            sig: "aaeba9765a6a6a82833fc5593fc3fe70997371a4fbd50afc064e2a50d7c21b2a7910f796ead8a4fcd2f7c592b8603c9cbe4f4756c6650127ba8334782ca53247".to_string(),
         }
     }
 

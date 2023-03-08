@@ -191,7 +191,7 @@ mod tests {
         let event = event::tests::get_simple_event();
         let message = MessageRequest::Event(event);
         let got = to_string(&message)?;
-        let json = event::tests::get_json();
+        let json = event::tests::get_simple_json();
         let want = format!(r#"["EVENT",{}]"#, json);
         assert_eq!(got, want);
         Ok(())
@@ -220,7 +220,7 @@ mod tests {
 
     #[test]
     fn deserialize_event_request_works() -> serde_json::Result<()> {
-        let data = format!(r#"["event",{}]"#, event::tests::get_json());
+        let data = format!(r#"["event",{}]"#, event::tests::get_simple_json());
         let got: MessageRequest = from_str(&data)?;
         let event = event::tests::get_simple_event();
         let want = MessageRequest::Event(event);
@@ -253,7 +253,7 @@ mod tests {
         let subscription_id = "subid".to_string();
         let message = MessageResponse::Event(subscription_id, event);
         let got = to_string(&message)?;
-        let json = event::tests::get_json();
+        let json = event::tests::get_simple_json();
         let want = format!(r#"["EVENT","subid",{}]"#, json);
         assert_eq!(got, want);
         Ok(())
@@ -271,7 +271,7 @@ mod tests {
 
     #[test]
     fn deserialize_event_response_works() -> serde_json::Result<()> {
-        let data = format!(r#"["event","subid",{}]"#, event::tests::get_json());
+        let data = format!(r#"["event","subid",{}]"#, event::tests::get_simple_json());
         let got: MessageResponse = from_str(&data)?;
         let event = event::tests::get_simple_event();
         let want = MessageResponse::Event("subid".to_string(), event);

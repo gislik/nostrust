@@ -56,6 +56,8 @@ pub enum EventCommand {
     Generate {
         #[arg(short, long)]
         kind: Kind,
+        #[arg(short, long)]
+        subject: Option<String>,
         content: String,
     },
     /// Output a new set metadata event to stdout
@@ -83,7 +85,11 @@ pub fn handle_args(args: Args, pair: &Pair) -> Result<()> {
     match args.command {
         Command::Event { subcommand } => match subcommand {
             EventCommand::Verify => verify_event(stdin())?,
-            EventCommand::Generate { kind, content } => generate_event(kind, &content)?,
+            EventCommand::Generate {
+                kind,
+                content,
+                subject,
+            } => generate_event(kind, subject, &content)?,
             EventCommand::SetMetadata {
                 name,
                 about,
@@ -121,13 +127,14 @@ pub fn read_event<R: Read>(reader: R) -> Result<Event> {
 pub fn verify_event<R: Read>(reader: R) -> Result<()> {
     let event = read_event(reader)?;
     event.verify()?;
-    println!("valid");
+    println!("Event is valid ✅");
     Ok(())
 }
 
-pub fn generate_event(kind: Kind, content: &str) -> Result<()> {
+pub fn generate_event(kind: Kind, subject: Option<String>, content: &str) -> Result<()> {
     let pair = Pair::generate();
-    let event = Event::new(kind, vec![], content, &pair);
+    let mut event = Event::new(kind, vec![], content, &pair);
+    event.set_subject(subject);
     serde_json::to_writer(stdout(), &event)?;
     Ok(())
 }
