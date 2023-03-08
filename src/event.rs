@@ -92,8 +92,14 @@ impl Event {
     /// Defined in [NIP-02](https://github.com/nostr-protocol/nips/blob/master/02.md).
     pub fn contact_list(contacts: Vec<Contact>, pair: &Pair) -> Self {
         let tags = contacts
-            .iter()
-            .map(|c| Tag::profile(c.key.to_owned(), &c.relay, &c.petname))
+            .into_iter()
+            .map(|c| {
+                Tag::profile(
+                    c.key,
+                    c.relay.unwrap_or("".to_string()),
+                    c.petname.unwrap_or("".to_string()),
+                )
+            })
             .collect();
         Event::new(CONTACT_LIST, tags, "", pair)
     }
@@ -137,10 +143,10 @@ impl Event {
     }
 }
 
-/// Kind denotes the event kind
+/// Kind denotes the event kind.
 pub type Kind = u32;
 
-/// Tag denotes the event tag
+/// Tag denotes the event tag.
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
 pub struct Tag(Vec<String>);
 
@@ -149,24 +155,39 @@ impl Tag {
         Tag(vec![E.to_string(), id, relay.to_string()])
     }
 
-    pub fn profile(key: Hex, relay: &str, petname: &str) -> Self {
+    pub fn profile<S>(key: Hex, relay: S, petname: S) -> Self
+    where
+        S: AsRef<str>,
+    {
         Tag(vec![
             P.to_string(),
             key.to_string(),
-            relay.to_string(),
-            petname.to_string(),
+            relay.as_ref().to_string(),
+            petname.as_ref().to_string(),
         ])
     }
 }
 
+/// Contact represent pubkeys in a contact list.
 pub struct Contact {
     key: Hex,
-    relay: String,
-    petname: String,
+    relay: Option<String>,
+    petname: Option<String>,
+}
+
+impl Contact {
+    pub fn new(key: Hex, relay: Option<String>, petname: Option<String>) -> Self {
+        Contact {
+            key,
+            relay,
+            petname,
+        }
+    }
 }
 
 type Result<T> = std::result::Result<T, Error>;
 
+/// Event error.
 #[derive(Debug, thiserror::Error)]
 #[error("event error")]
 pub enum Error {
@@ -205,7 +226,7 @@ impl From<Error> for io::Error {
     }
 }
 
-pub fn io_error(message: &str) -> io::Error {
+fn io_error(message: &str) -> io::Error {
     io::Error::new(ErrorKind::Other, message)
 }
 

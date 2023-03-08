@@ -4,7 +4,7 @@ use anyhow::Result;
 use clap::Parser;
 use cli::env::*;
 use cli::*;
-use nostrust::Pair;
+use nostrust::key::Pair;
 
 fn main() -> Result<()> {
     let pair = var("SECRET_KEY")

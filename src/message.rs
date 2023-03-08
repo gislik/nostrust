@@ -100,6 +100,7 @@ impl<'de> Deserialize<'de> for MessageRequest {
     }
 }
 
+/// Message reqsponse.
 #[derive(Debug, PartialEq)]
 pub enum MessageResponse {
     Event(String, Event),

@@ -1,16 +1,12 @@
 mod bech32;
 mod encryption;
-mod event;
-mod key;
-mod message;
+pub mod event;
+pub mod key;
+pub mod message;
 mod mnemonic;
-mod request;
+pub mod request;
 mod signature;
 mod time;
 
-pub use event::*;
-pub use key::*;
-pub use message::*;
-pub use request::*;
-
+/// Hex-encoded string.
 pub type Hex = String;

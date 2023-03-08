@@ -4,7 +4,11 @@ use std::io::{stdin, stdout, Read, Write};
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use nostrust::{Event, Hex, Kind, MessageRequest, Pair, Request};
+use nostrust::event::{Event, Kind};
+use nostrust::key::Pair;
+use nostrust::message::MessageRequest;
+use nostrust::request::Request;
+use nostrust::Hex;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about)]

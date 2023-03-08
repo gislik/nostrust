@@ -145,7 +145,7 @@ impl TryFrom<&Mnemonic> for Pair {
     }
 }
 
-/// Secret key
+/// The secret key.
 #[derive(Clone, Copy)]
 pub struct SecretKey(ec::SecretKey);
 
@@ -200,6 +200,7 @@ impl TryFrom<&[u8]> for SecretKey {
     }
 }
 
+/// The public key.
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct PublicKey(pub(crate) ec::XOnlyPublicKey);
 
@@ -235,6 +236,7 @@ impl ToString for PublicKey {
 
 type Result<T> = std::result::Result<T, Error>;
 
+/// Key error.
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("key")]
